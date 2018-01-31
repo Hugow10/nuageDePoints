@@ -1,0 +1,1115 @@
+// xcas version=1.2.2-45 fontsize=14 font=0 currentlevel=2
+// fltk 7Fl_Tile 11 -371 1554 744 14 0
+[
+// fltk N4xcas7EditeurE 11 -371 1554 420 14 0
+12931 ,
+nuages2d():={
+  //listxi:=list[1,2,3,4];
+  //listyi:=list[-3,0,7,18];
+  //listphi:=list[x^2,ln(x),exp(x),sin(x),sqrt(x)];
+  //listphi:=list[1/x,1];
+  
+  listxi:=list[0.02213,0.02459,0.0273,0.02976,0.03274,0.03597,0.03897,0.04155,0.04418,0.045];
+  listyi:=list[-0.00358,-0.01456,0.15953,1.04196,1.52963,1.27626,0.85025,0.36468,0.06704,0.04898];
+  listphi:=list[x^3,x^2,x,1];
+  listxomega:=list[0.02213,0.045];
+  listcontraintes:=list[-0.00358,0.04898];
+  listordrederivation:=list[0,0];
+
+//restart ;
+  //  Passage des valeurs entre windev et Giac
+// listxi:=list[%1]; 
+// xMoyen := approx(moyenne(listxi)) ;
+ //xMax := max(listxi);
+ //xMin := min(listxi);
+ 
+ //listyi:=list[%2];
+ //yMoyen := approx(moyenne(listyi)) ;
+ //yMax := max(listyi)
+ //yMin := min(listyi)
+    
+ //listphi:=list[%3];
+   
+ //listxomega:=list[%4];
+ //listyomega:=list[%5]
+//listyomega pour l'display des points contraints
+ //listcontraintes:=list[%5];
+ //listordrederivation:=list[%6];
+
+// ---------------------------------------------------------------
+
+  n:= dim(listxi);
+  p:= dim(listphi);
+  k:= dim(listcontraintes);   
+  matlambdaj:=newMat(p,1); 
+  matphi:= newMat(p,1);
+  matphi:= list2mat((listphi,1));
+  listuux:= newList(k);
+  listuuy:= newList(k);
+  matphik:=newMat(k,1);
+  matphik:=subMat(matphi,p-k,0,p,0);
+  matphi1k:=subMat(matphi,0,0,p-k-1,0);
+  listphik:=mat2list(matphik);
+  listphi1k:=mat2list(matphi1k);
+  listcarresresidus:=newList(0);
+
+//         
+label debut;  
+ 
+    if(k != 0)
+     {
+       matdelta0t:=newMat(k,k);
+       matdeltal:=newMat(k,k);
+       matdeltalj:=newMat(k,k);
+     }                  
+//          
+    if(k==0)
+     {
+       goto k0;
+     }
+    if(k==1)
+     {
+       goto k1;
+     }
+//   calcul de delta0   
+    matcont:=list2mat(listcontraintes,1);
+    matdelta0:=newMat(k,k);
+    matdeltalt:=newMat(k,k);
+    matdelta:=newMat(k,p);
+    matdeltat:=newMat(p,k);        
+    matyi:=newMat(n,1);
+    matyi:=list2mat(listyi,1);
+    matlambdaj:=newMat(p,1);
+    matphi:= newMat(p,1);
+    matphi:= list2mat((listphi,1));
+    matphik:=newMat(k,1);
+    matphik:=subMat(matphi,p-k,0,p,0);
+    matphi1k:=newMat(p-k,1);
+    matphi1k:=subMat(matphi,0,0,p-k-1,0);
+    listphik:=mat2list(matphik);
+    listphi1k:=mat2list(matphi1k); 
+    
+    for(j:=0;j<=k-1;j++)
+      {
+        c:=listordrederivation[j];
+        listdeltadelta0:=newList(k);
+        listdeltadelta0:=diff(listphi,x,c);
+        matdelta[j]:=subst(listdeltadelta0,x=listxomega[j]);       
+      }    
+
+    matdelta0:=subMat(matdelta,0,p-k,k-1,p-1);
+    matdelta0t:=transpose(matdelta0);
+    delta0:=approx(det(matdelta0)); 
+
+    if(delta0==0)
+     {
+       return "calculs impossibles. Modifiez l'ordre des fonctions d'essai, en commenÃ§ant du cÃ´tÃ© droit, par exemple." ;
+     }     
+
+    matdeltat:=transpose(matdelta);       
+    matdeltalt:=transpose(matdelta0);
+    matdeltall:=newMat(k,1);
+    matdeltallj:=newMat(k,p-k);
+    matdeltaltj:=newMat(k,k);
+    matdeltalj:=newMat(k,k);
+    matdeltalt[0]:=listcontraintes; 
+    matdeltal:=transpose(matdeltalt);
+    matdeltaltj:=matdeltalt;
+    detmatdeltal:=approx(det(matdeltalt));
+    matdeltall[0,0]:=detmatdeltal;
+    
+    for(j:=0;j<=p-k-1;j++)
+      {
+        matdeltatj:=matdeltat;
+        matdeltaltj[0]:=matdeltat[j];
+        matdeltalj:=transpose(matdeltaltj);
+        detmatdeltallj:=approx(det(matdeltaltj));
+        matdeltallj[0,j]:=detmatdeltallj;
+      }
+      for(l:=1;l<=k-1;l++)
+        {
+           matdeltalt[l]:=col(matdelta0,[l-1]);
+           detmatdeltalt:=approx(det(matdeltalt));
+           matdeltall[l,0]:=detmatdeltalt;
+           for(jj:=0;jj<=p-k-1;jj++)
+             {
+               matdeltaltj:=matdeltalt;
+               matdeltaltj[0]:=matdeltat[jj];
+               matdeltalj:=transpose(matdeltaltj);
+               detmatdeltaltj:=approx(det(matdeltaltj));
+               matdeltallj[l,jj]:=detmatdeltaltj;              
+             }
+        } 
+ 
+    listimage:=newList(n);
+    listsomme:=newList(0);
+    listsommesomme:=newList(0);
+    listdeltall:=newList(k);
+    listdeltall:=mat2list(matdeltall);
+    listmatxi:=newlist(n)
+    listsommesomme:=(somme(((-1).^j)*listdeltall[j]*listphik[j],j,0,k-1));
+    h(x):=listsommesomme;
+    for(jj:=0;jj<=n-1;jj++)
+          {
+            listsomme[jj]:=listsommesomme(listxi[jj]);
+          }
+    listimage:=newList(n);
+    listimage:=delta0*listyi-listsomme; 
+    matimage:=newMat(n,1);
+    listphi1kt:=newlist(p-k);
+    listmata:=newList(n);
+    mata:=newMat(n,p-k);
+    matat:=newMat(p-k,n);
+    matlambda:=newMat(p,1);
+    for(j:=0;j<=p-k-1;j++)    
+      {
+        listmatax:=delta0 * listphi1k[j]-somme(((-1).^(l))*matdeltallj[l,j]*matphik[l,0],l,0,k-1) ;        
+        fmatax(x):=eval(listmatax); 
+        for(jj:=0;jj<=n-1;jj++)
+          {
+            listmata[jj]:=listmatax(listxi[jj]);
+          }  
+        matat[j]:=listmata;
+
+      }
+    mata:=transpose(matat);
+//zÃ©ros listimage et mata 
+    for(r:=0;r<=n-1;r++)
+      {
+        for(t:=0;t<=k-1;t++)
+          {/*print("listordrederivation[t]=",listordrederivation[t]);Pause;*/
+            if(listordrederivation[t]==0)
+             {/*print("listxomega[t]:=",listxomega[t]);print("listxi[r]:=",listxi[r]);print("listcontraintes[t]=",listcontraintes[t]),print("listyi[r]=",listyi[r]);Pause;*/
+               if(listxomega[t]==listxi[r] and (listcontraintes[t]==listyi[r]))
+                {
+                  listimage[r]:=0;/*print("listimage[r]=",listimage[r])*/
+                 
+                  for(jj:=0;jj<=p-k-1;jj++)
+                    {/*print("mata[r,jj]=",mata[r,jj]);Pause;*/
+                      mata[r,jj]:=0;/*print("mata[r,jj]=",mata[r,jj]);Pause*/
+                    };                 
+                };
+             };
+          };
+      };
+    matimage:=list2mat(listimage,1);
+    matlambda:=simult(matat*mata,matat*matimage);
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);
+    listsigma:=newList(k);
+    for(jj:=0;jj<=k-1;jj++)
+      {
+        listsigma[jj]:=somme(matlambda[j,0]*matdelta[jj,j],j,0,p-k-1);
+      }
+    matdeltalambdal:=newMat(k,k);
+    matdeltalambdalt:=newMat(k,k);
+    matdeltalambdalambdalt:=newMat(k,k);
+    matdeltalambdall:=newMat(k,1);
+    matlambdalambda:=newMat(k,1);  
+    matdeltalambdalt:=transpose(matdelta0);
+    listdeltalambdal:=newList(k);
+    listcol:=newList(k);
+    listdeltalambdall:=newList(k);
+    listlambdalambda:=newList(k);
+    matdeltalambdalt[0]:=listsigma;
+    matdeltalambdalambdalt:=matdeltalambdalt;
+    matdeltalambdal:=transpose(matdeltalambdalt);
+    detmatdeltalambdal:=approx(det(matdeltalambdal));
+    matdeltalambdall[0]:=detmatdeltalambdal;
+    matdeltalambdalambdalt:=matdeltalambdalt;
+
+    for(l:=1;l<=k-1;l++)
+      {
+        matcol:=col(matdelta0,[l-1]);
+        listcol:=mat2list(matcol);
+        matdeltalambdalt[l]:=listcol;
+        matdeltalambdal:=transpose(matdeltalambdalt);
+        detmatdeltalambdal:=approx(det(matdeltalambdalt));
+        matdeltalambdall[l]:=detmatdeltalambdal;
+        listdeltalambdall:=mat2list(matdeltalambdall);
+        matdeltalambdalt[l]:=matdelta0t[l-1];                              
+      }
+
+    for(l:=0;l<=k-1;l++)
+      {
+        listlambdalambda[l]:=(((-1).^(l))*(listdeltall[l]-listdeltalambdall[l]))/delta0;
+        listlambda[p-k+l]:=listlambdalambda[l];
+      }
+    matlambda:=list2mat(listlambda,1);
+    listfx:=newList(p);
+    listfx:=listlambda*listphi;
+    listresidus:=newList(n);
+    listcarresresdus:=newList(n);
+    f(x):=somme(listfx);  
+  
+  // Recalcul les points contraints en tenant compte de l'ordre de derivation
+     for(j:=0 ; j<=k-1; j++)
+      {
+       if (listordrederivation[j] > 0) then 
+            {listcontraintes[j] := f(listxomega[j]) } 
+	else 
+            {listcontraintes[j] := 0 }
+      };
+    goto affichages;   
+label k0;
+    mata:=newMat(n,p);
+    matat:=newMat(p,n);
+    listmatamata:=newList(n);
+    listimage:=listyi;
+    matimage:=list2mat(listimage,1);
+    for(j:=0;j<=p-1;j++)
+      {
+        listmatamata:=newList(n);
+        listmatamata:=subst(listphi,x=listxi);
+        matat:=listmatamata;                       
+     }
+     for(j:=0;j<=p-1;j++)
+       {
+         if(listphi[j]==1)
+          {
+            listmatamatat:=newList(n);
+            Fill(1,listmatamatat);
+            matat[j]:=listmatamatat; 
+          }
+       }      
+    mata:=transpose(matat);
+   
+
+//return " mata= " + mata;
+
+
+    matlambda:=approx(simult(transpose(mata)*mata,transpose(mata)*matimage));
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);  
+    listfx:=newList(p);
+    listfx:=newList(p);
+    listfx:=listlambda.*listphi;
+    listresidus:=newList(n);
+    listcarresresidus:=newList(n);
+    f(x):=somme(listfx);
+
+    goto affichages;
+
+label k1
+    listderivex:=newlist(p);
+    listdelta:=newList(p);
+    listderivephijx:=newList(p);
+    listimage:=newList(n);
+    listimagex:=newList(0);
+    c:=listordrederivation[0];
+    listderivephijx:=diff(listphi,x,c);
+    listderivephij:=list(subst(listderivephijx,x=listxomega[0]));
+    delta0:=listderivephij[p-1];
+
+    if(delta0==0)
+      {
+        return "Calculs impossibles. Modifiez l'ordre des fonctions d'essais phi en commenÃ§ant par la droite." ;
+      }  
+
+    delta1:=listcontraintes[0];
+    listimagex:=listphi[p-1]*delta1;
+    listimage:=delta0*listyi-subst(listimagex,x=listxi)  
+    matimage:=newMat(n,1);
+    matimage:=list2mat(listimage,1);
+    listmatat:=newList(n); 
+    mata:=newMat(n,p-1);matat:=newMat(p-1,n);
+
+    for(j:=0;j<=p-2;j++)
+      {
+        listmatat:=delta0*subst(listphi[j],(x=listxi))-listderivephij[j]*subst(listphi[p-1],(x=listxi));
+        matat[j]:=listmatat;  
+      }
+
+    mata:=transpose(matat);
+    matlambda:=newMat(p-1,1);
+    matlambda:=approx(simult(matat*mata,matat*matimage));
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);
+    listsigma:=newList(n);    
+
+    for(j:=0;j<=p-2;j++)
+      {
+        listlambdalambda:=newList(n);
+        listlambdalambda:=listlambda[j]*listderivephij[j];
+        listsigma[j]:=listlambdalambda;
+      }
+
+    sigma:=somme(listsigma);
+    lambdap:=(delta1-sigma)/delta0;
+    listlambda[p-1]:=lambdap;
+    listfx:=newList(p);
+    listfx:=newList(p);
+    listfx:=listlambda*listphi;
+    listresidus:=newList(n);
+    listresidus:=newList(n);
+    listcarresresidus:=newList(n);
+    f(x):=somme(listfx);
+    // Recalcul les points contraints en tenant compte de l'ordre de derivation
+     for(j:=0 ; j<=k-1; j++)
+      {
+       if (listordrederivation[j] > 0) then 
+            {listcontraintes[j] := f(listxomega[j]) } 
+	else 
+            {listcontraintes[j] := 0 }
+      };
+label affichages;
+    longueurpolygone:=somme(sqrt((listxi[j+1]-listxi[j]).^2+(listyi[j+1]-listyi[j]).^2),j,0,n-2);
+    deriveefx(x):=diff(f(x),x,1);
+    longueurcourbefx:=abs(int(sqrt(1+(deriveefx(x)).^2),x,listxi[0],listxi[n-1]));
+    qualrep:=longueurpolygone/longueurcourbefx;
+    for(jj:=0;jj<=n-1;jj++)
+      {
+        listresidus[jj]:=approx(abs(listyi[jj]-(f(listxi[jj]))));
+        sommeresidus:=somme(listresidus);
+        listcarresresidus[jj]:=approx(((listyi[jj]-(f(listxi[jj])))*(listyi[jj]-(f(listxi[jj])))));
+        sommecarresresidus:=somme(listcarresresidus);
+      }
+    residumoyen:=sommeresidus/n;
+    residucarremoyen:=sommecarresresidus/n;
+    xmaxgraph  := max(concat(listxi,listxomega));
+    xmingraph  := min(concat(listxi,listxomega));
+    ymaxgraph  := max(concat(listyi,listyomega));
+    ymingraph  := min(concat(listyi,listyomega));
+
+    airesousfxromb:=romberg(abs(f(x)),x=xmingraph..xmaxgraph);   
+    aire_sous_tendue:=0;
+    airei:=0;
+    for(j:=0;j<=n-2;j:=j++)
+     {
+     if(listyi[j]*listyi[j+1]<0)
+      {
+        xni:=(listxi[j]*listyi[j+1]-listxi[j+1]*listyi[j])/(listyi[j+1]-listyi[j]);
+        airei:=0.5*(abs(listyi[j]*(xni-listxi[j]))-sign(listyi[j]*listyi[j+1])*abs(listyi[j+1]*(xni-listxi[j+1])));
+      }
+     else
+        {
+          airei:=0.5*abs((abs(listyi[j])+abs(listyi[j+1]))*abs(listxi[j]-listxi[j+1]));
+        }
+     aire_sous_tendue := aire_sous_tendue +airei 
+     } 
+   
+      //return  f(x) + ";" + sommeresidus + ";" + residumoyen + ";" + residucarremoyen +";" + xMoyen + ";" + yMoyen  + ";" + xMax + ";" + xMin + ";" + yMax + ";" + yMin + ";" +
+      //n + ";" +  p + ";" +  k + ";" +  approx(listxi )  + ";" +  approx(listyi)  + ";" +  approx(listxomega) + ";" +  approx(listyomega)  + ";" +   approx(listcontraintes) + ";"  + 
+       //listordrederivation + ";" + xmaxgraph + ";" + xmingraph + ";" + ymaxgraph + ";" + ymingraph +";" + qualrep  + ";" + airesousfxromb + ";" + aire_sous_tendue  ;
+
+//-------------------------------------------------------------------------------------------------------------------------------
+return " f(x)=" + f(x)  + " rÃ©sidumoyen= " + residumoyen + " mata= " + mata + " matimage= " + matimage;
+//-------------------------------------------------------------------------------------------------------------------------------
+   
+ }:;
+
+nuages2d() ;,
+// fltk N4xcas10Log_OutputE 11 49 1554 290 14 0
+// InterprÃ¨te h£// Attention: listsommesomme, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation h£// InterprÃ¨te fmatax£// Attention: listmatax, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation fmatax£// InterprÃ¨te f£// Attention: listfx, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation f£// InterprÃ¨te f£// Attention: listfx, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation f£// InterprÃ¨te f£// Attention: listfx, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation f£// InterprÃ¨te deriveefx£Attention, pour dÃ©finir la fonction derivÃ©e utiliser fonction_derivee ou unapply: diff(f(x),x,1)£Warning, une fonction algÃ©brique dÃ©finie par d'autres fonctions peut conduire Ã  des erreurs d'Ã©valuation£Vous voulez dire peut Ãªtre deriveefx:=unapply(diff(f(x),x,1),x)£// SuccÃ¨s lors de la compilation deriveefx£// InterprÃ¨te nuages2d£// Attention: listxi,listyi,x,listphi,listxomega,listcontraintes,listordrederivation,n,p,k,matlambdaj,matphi,listuux,listuuy,matphik,matphi1k,listphik,listphi1k,listcarresresidus,debut,matdelta0t,matdeltal,matdeltalj,k0,k1,matcont,matdelta0,matdeltalt,matdelta,matdeltat,matyi,j,c,listdeltadelta0,delta0,matdeltall,matdeltallj,matdeltaltj,detmatdeltal,matdeltatj,detmatdeltallj,l,detmatdeltalt,jj,detmatdeltaltj,listimage,listsomme,listsommesomme,listdeltall,newlist,listmatxi,matimage,listphi1kt,listmata,mata,matat,matlambda,listmatax,r,t,listlambda,listsigma,matdeltalambdal,matdeltalambdalt,matdeltalambdalambdalt,matdeltalambdall,matlambdalambda,listdeltalambdal,listcol,listdeltalambdall,listlambdalambda,detmatdeltalambdal,matcol,listfx,listresidus,listcarresresdus,affichages,listmatamata,listmatamatat,listderivex,listdelta,listderivephijx,listimagex,listderivephij,delta1,listmatat,sigma,lambdap,longueurpolygone,longueurcourbefx,qualrep,sommeresidus,sommecarresresidus,residumoyen,residucarremoyen,xmaxgraph,xmingraph,listyomega,ymaxgraph,ymingraph,airesousfxromb,aire_sous_tendue,airei,xni, dÃ©clarÃ©e(s) comme variable(s) globale(s) lors de la compilation nuages2d£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.045)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.045)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.045)£Impossible de touver l'intÃ©grale numÃ©rique avec Romberg, on renvoie la derniÃ¨re approximation£
+,
+// fltk N4xcas8EquationE 11 339 1554 34 14 0 1
+"Done"," f(x)=-253305.722833*x^3+17299.4563915*x^2-269.76254803*x+0.239379461743 rÃ©sidumoyen= 0.226564010007 mata= [[0,0],[1.05319386953e-07,1.148270682e-06],[1.97624126677e-07,2.09281083e-06],[2.57664522653e-07,2.659351044e-06],[2.97103021514e-07,2.974897582e-06],[2.94678649154e-07,2.858182824e-06],[2.46400138616e-07,2.322338724e-06],[1.66526791688e-07,1.53226713e-06],[4.60280730357e-08,4.1351247e-07],[0,0]] matimage= matrix[[0],[0.0003804102],[-0.0034585905],[-0.023510467],[-0.0345068511],[-0.0285425104],[-0.0186419817],[-0.007401391],[-0.0004561314],[0]]"
+]
+,
+// fltk 7Fl_Tile 11 375 1554 349 14 0
+[
+// fltk N4xcas16Xcas_Text_EditorE 11 375 1554 25 14 0
+10 ,
+nuages2d(),
+// fltk N4xcas10Log_OutputE 11 400 1554 290 14 0
+Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.05256*x+0.0012450274,x,0.045)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^3+8.0287122403e-05*x-1.52889175813e-06,x,0.045)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02213)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02459)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.0273)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.02976)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03274)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03597)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.03897)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.04155)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.04418)£Warning, evaluating univariate expression of x(value) like if expression was a function.£You should write subst(-0.02287*x^2+0.0015352631*x-2.27750895e-05,x,0.045)£Impossible de touver l'intÃ©grale numÃ©rique avec Romberg, on renvoie la derniÃ¨re approximation£
+,
+// fltk N4xcas8EquationE 11 690 1554 34 14 0 1
+" f(x)=-253305.722833*x^3+17299.4563915*x^2-269.76254803*x+0.239379461743 rÃ©sidumoyen= 0.226564010007 mata= [[0,0],[1.05319386953e-07,1.148270682e-06],[1.97624126677e-07,2.09281083e-06],[2.57664522653e-07,2.659351044e-06],[2.97103021514e-07,2.974897582e-06],[2.94678649154e-07,2.858182824e-06],[2.46400138616e-07,2.322338724e-06],[1.66526791688e-07,1.53226713e-06],[4.60280730357e-08,4.1351247e-07],[0,0]] matimage= matrix[[0],[0.0003804102],[-0.0034585905],[-0.023510467],[-0.0345068511],[-0.0285425104],[-0.0186419817],[-0.007401391],[-0.0004561314],[0]]"
+]
+,
+// fltk 7Fl_Tile 11 726 1554 26 14 0
+[
+// fltk N4xcas16Xcas_Text_EditorE 11 726 1554 25 14 0
+0 ,
+,
+// fltk N4xcas10Log_OutputE 11 751 1554 1 14 0
+
+]
+// context 30750 giac archive
+7 0 108 8 0 0 'cas_setup' 7 0 12 0 0 0
+0 0 0
+0 0 0
+0 1 0
+0 0 0
+7 0 2 1 Vç¯Ò<
+1 Vç¯Ò<
+0 12 0
+7 0 4 0 8 0
+0 100 0
+0 0 0
+0 25 0
+0 0 0
+0 1 0
+0 0 0
+0 1 0
+8 0 0 'xyztrange' 7 0 16 1       $À
+1       $@
+1       $À
+1       $@
+1       $À
+1       $@
+1       $À
+1       $@
+1       $À
+1       $@
+1 ffffffö¿
+1 š™™™™™ñ?
+0 1 0
+1         
+1       ğ?
+0 3 0
+7 0 0 7 0 0 8 0 15 7 1 2 1 Oòß­“œ?
+6 16 aire_sous_tendue 8 0 15 7 1 2 1 ÁWè~ğ?
+6 5 airei 8 0 15 7 1 2 7 0 2 1 .´[I‘?
+1 APH°[I‘?
+6 14 airesousfxromb 8 0 15 7 1 2 0 0 0
+6 1 c 8 0 15 7 1 2 1 Ğò<¸;k—¿
+6 6 delta0 8 0 15 7 1 2 0 4 0
+6 6 delta1 8 0 15 7 1 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'diff' 7 1 3 8 0 81 7 1 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'somme' 7 0 4 8 0 2 8 0 4 7 1 2 1 9ˆ\ÈÍëA
+8 0 7 7 1 2 6 1 x 0 3 0
+8 0 4 7 1 2 1 k¤„5İäĞ@
+8 0 7 7 1 2 6 1 x 0 2 0
+8 0 2 8 0 4 7 1 2 1 áIe3Üp@
+6 1 x 1 ÓÂwü£Î?
+6 1 x 6 1 x 0 1 0
+6 9 deriveefx 8 0 15 7 1 2 1 )Ğ'ò$éª¿
+6 12 detmatdeltal 8 0 15 7 1 2 1 ³qzx†{¿
+6 18 detmatdeltalambdal 8 0 15 7 1 2 1 °N‰3\'Y¿
+6 14 detmatdeltallj 8 0 15 7 1 2 1 ;ÈÌıfT¿
+6 13 detmatdeltalt 8 0 15 7 1 2 1 ˜‡©;¤á÷¾
+6 14 detmatdeltaltj 8 0 15 7 1 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'somme' 7 0 4 8 0 2 8 0 4 7 1 2 1 9ˆ\ÈÍëA
+8 0 7 7 1 2 6 1 x 0 3 0
+8 0 4 7 1 2 1 k¤„5İäĞ@
+8 0 7 7 1 2 6 1 x 0 2 0
+8 0 2 8 0 4 7 1 2 1 áIe3Üp@
+6 1 x 1 ÓÂwü£Î?
+6 1 f 8 0 15 7 1 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'eval' 8 0 1 7 1 2 8 0 2 8 0 4 7 1 2 1 Ğò<¸;k—?
+8 0 7 7 1 2 6 1 x 0 2 0
+8 0 1 7 1 2 8 0 4 7 1 2 1 °N‰3\'Y?
+6 1 x 1 ˜‡©;¤á÷¾
+6 6 fmatax 8 0 15 7 1 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 1 7 1 2 8 0 2 8 0 4 7 1 2 1 )Ğ'ò$éª?
+6 1 x 1 ;ÈÌıfT?
+6 1 h 8 0 15 7 1 2 0 9 0
+6 1 j 8 0 15 7 1 2 0 10 0
+6 2 jj 8 0 15 7 1 2 0 2 0
+6 1 k 8 0 15 7 1 2 0 2 0
+6 1 l 8 0 15 7 1 2 1 @]tÑE×¿
+6 7 lambdap 8 0 15 7 1 2 7 0 10 0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+6 16 listcarresresdus 8 0 15 7 1 2 7 0 10 1       ‚9
+1 ®{>™T¹?
+1 e FsÊ?
+1 Ùğ @ò©¡?
+1 V¶#%EÌ?
+1 MÇ—0¤ã•?
+1 UÛV™?
+1 _WB­PÀÀ?
+1 ¡¦€<l ?
+1     @Ì±9
+6 17 listcarresresidus 8 0 15 7 1 2 7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 7 listcol 8 0 15 7 1 2 7 23 2 0 0 0
+0 0 0
+6 15 listcontraintes 8 0 15 7 1 2 7 0 5 0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+6 9 listdelta 8 0 15 7 1 2 7 23 4 8 0 7 7 1 2 6 1 x 0 3 0
+8 0 7 7 1 2 6 1 x 0 2 0
+6 1 x 0 1 0
+6 15 listdeltadelta0 8 0 15 7 1 2 7 0 2 0 0 0
+0 0 0
+6 16 listdeltalambdal 8 0 15 7 1 2 7 0 2 1 ôı¼±[ãÀ
+1 ³qzx†{¿
+6 17 listdeltalambdall 8 0 15 7 1 2 7 0 2 1 )Ğ'ò$éª¿
+1 ;ÈÌıfT¿
+6 11 listdeltall 8 0 15 7 1 2 7 23 5 0 6 0
+10 0 1 0
+0 3 0
+8 0 8 0 3 0
+8 0 17 0 3 0
+8 0 4 7 1 2 8 0 6 0 2 0
+8 0 6 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+6 14 listderivephij 8 0 15 7 1 2 7 23 5 8 0 4 7 1 2 0 2 0
+6 1 x 8 0 6 6 1 x 8 0 8 6 1 x 8 0 17 6 1 x 8 0 4 7 1 2 10 0 1 0
+0 2 0
+8 0 6 8 0 7 7 1 2 6 1 x 10 0 1 0
+0 2 0
+6 15 listderivephijx 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 0 5 0
+6 11 listderivex 8 0 15 7 1 2 7 0 4 8 0 2 8 0 4 7 1 2 1 9ˆ\ÈÍëA
+8 0 7 7 1 2 6 1 x 0 3 0
+8 0 4 7 1 2 1 k¤„5İäĞ@
+8 0 7 7 1 2 6 1 x 0 2 0
+8 0 2 8 0 4 7 1 2 1 áIe3Üp@
+6 1 x 1 ÓÂwü£Î?
+6 6 listfx 8 0 15 7 1 2 7 23 10 0 0 0
+1 ú~9^9î8?
+1 HæÎ¢0Ul¿
+1 —Æƒ» ˜¿
+1 'ÅìÉáª¡¿
+1 ¡ŞÚr?:¿
+1 ç¿ï6â“¿
+1 Yw£ÄëP~¿
+1 ¼ÿrä=¿
+0 0 0
+6 9 listimage 8 0 15 7 1 2 8 0 4 7 1 2 8 0 7 7 1 2 6 1 x 10 0 1 0
+0 2 0
+0 4 0
+6 10 listimagex 8 0 15 7 1 2 7 0 4 1 9ˆ\ÈÍëÁ
+1 k¤„5İäĞ@
+1 áIe3ÜpÀ
+1 ÓÂwü£Î?
+6 10 listlambda 8 0 15 7 1 2 7 0 2 1 áIe3ÜpÀ
+1 ÓÂwü£Î?
+6 16 listlambdalambda 8 0 15 7 1 2 7 0 10 1       °;
+1 ø5y÷ÈC³>
+1 Ø(ÑëFÁ>
+1 0r–²éNÆ>
+1 ¨Î=‹ôÈ>
+1 0üèŸæùÇ>
+1 F 7/{Ã>
+1 €3»†	µ¹>
+1 €…sÀ›>
+1       À»
+6 8 listmata 8 0 15 7 1 2 7 23 2 7 23 3 1 š™™™™™é?
+1 Ã0Ã0ó?
+1 «ªªªªªú?
+0 1 0
+6 12 listmatamata 8 0 15 7 1 2 7 0 3 0 1 0
+0 1 0
+0 1 0
+6 13 listmatamatat 8 0 15 7 1 2 7 23 4 8 0 1 7 1 2 8 0 4 7 1 3 8 0 16 0 1 0
+8 0 6 0 2 0
+8 0 6 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+8 0 2 8 0 17 0 3 0
+8 0 1 7 1 2 8 0 4 7 1 3 8 0 16 0 2 0
+8 0 6 0 2 0
+8 0 6 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+8 0 2 8 0 4 7 1 2 8 0 7 7 1 2 0 2 0
+10 0 1 0
+0 2 0
+8 0 17 0 3 0
+8 0 1 7 1 2 8 0 4 7 1 3 8 0 16 0 3 0
+8 0 6 0 2 0
+8 0 6 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+8 0 2 8 0 4 7 1 2 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+8 0 17 0 3 0
+8 0 1 7 1 2 8 0 4 7 1 3 8 0 16 0 4 0
+8 0 6 0 2 0
+8 0 6 8 0 7 7 1 2 0 3 0
+10 0 1 0
+0 2 0
+8 0 2 8 0 4 7 1 2 0 2 0
+8 0 17 0 3 0
+6 9 listmatat 8 0 15 7 1 2 8 0 1 7 1 2 8 0 2 8 0 4 7 1 2 1 Ğò<¸;k—?
+8 0 7 7 1 2 6 1 x 0 2 0
+8 0 1 7 1 2 8 0 4 7 1 2 1 °N‰3\'Y?
+6 1 x 1 ˜‡©;¤á÷¾
+6 9 listmatax 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 0 10 0
+6 9 listmatxi 8 0 15 7 1 2 7 23 2 0 0 0
+0 0 0
+6 19 listordrederivation 8 0 15 7 1 2 7 23 4 8 0 7 7 1 2 6 1 x 0 3 0
+8 0 7 7 1 2 6 1 x 0 2 0
+6 1 x 0 1 0
+6 7 listphi 8 0 15 7 1 2 7 0 2 8 0 7 7 1 2 6 1 x 0 3 0
+8 0 7 7 1 2 6 1 x 0 2 0
+6 9 listphi1k 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 0 2 0
+6 10 listphi1kt 8 0 15 7 1 2 7 0 2 6 1 x 0 1 0
+6 8 listphik 8 0 15 7 1 2 7 0 10 1       ¸<
+1 VoË^º!Ô?
+1 _zx?Öİ?
+1 øIkI\ÆÇ?
+1 MÏúİ?
+1 ĞUNÙà¶Â?
+1 xçÁ5P"Ä?
+1 ªVKÙ'×?
+1 (Ñò2ªÆ?
+1      àĞ<
+6 11 listresidus 8 0 15 7 1 2 7 0 2 1 ÜWW»Tè@
+1 è*Š6Øå'@
+6 9 listsigma 8 0 15 7 1 2 7 0 10 1 ğÆàê‚v?
+1 @edßİ¿
+1 ØŠ¶"ªâ(¿
+1 Ô –ê4¿
+1 œ;Øša.?¿
+1 è6=†P'E¿
+1 "ù¾RJ¿
+1 V*ÖÃN¿
+1 ±*ÑÁ’¥Q¿
+1 :´+XZR¿
+6 9 listsomme 8 0 15 7 1 2 8 0 1 7 1 2 8 0 2 8 0 4 7 1 2 1 )Ğ'ò$éª?
+6 1 x 1 ;ÈÌıfT?
+6 14 listsommesomme 8 0 15 7 1 2 7 0 2 0 0 0
+0 0 0
+6 7 listuux 8 0 15 7 1 2 7 0 2 0 0 0
+0 0 0
+6 7 listuuy 8 0 15 7 1 2 7 23 10 1 E»
+)?©–?
+1  <÷.™?
+1 £#¹ü‡ô›?
+1 ~têÊgy?
+1 ÁÅŠLÃ ?
+1 ˜4Fë¨j¢?
+1 ‡Ü7àó£?
+1 ƒ/L¦
+F¥?
+1 IFÎÂ¦?
+1 
+×£p=
+§?
+6 6 listxi 8 0 15 7 1 2 7 23 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 10 listxomega 8 0 15 7 1 2 7 23 10 1 ÀnİÍSm¿
+1 6Y£¢Ñ¿
+1 z]¢zkÄ?
+1 ²×»?Ş«ğ?
+1 °N]yø?
+1 ]›kô?
+1 h‘í|?5ë?
+1 ‚V`ÈêV×?
+1 a†ˆ)±?
+1 İïPè©?
+6 6 listyi 8 0 15 7 1 2 7 23 2 0 -2 0
+0 33 0
+6 10 listyomega 8 0 15 7 1 2 1 Ï{ø™Î¿@
+6 16 longueurcourbefx 8 0 15 7 1 2 1 “Û J@
+6 16 longueurpolygone 8 0 15 7 1 2 7 0 10 7 0 2 0 0 0
+0 0 0
+7 0 2 1 `+Ö?~E|>
+1 ø5y÷ÈC³>
+7 0 2 1 
+y¡3P†Š>
+1 Ø(ÑëFÁ>
+7 0 2 1 „E¤J‘>
+1 0r–²éNÆ>
+7 0 2 1 lã>è0ğ“>
+1 ¨Î=‹ôÈ>
+7 0 2 1 ¨¦¡gŠÆ“>
+1 0üèŸæùÇ>
+7 0 2 1 $=E‰>
+1 F 7/{Ã>
+7 0 2 1 Ø^&ÑY†>
+1 €3»†	µ¹>
+7 0 2 1 @ò$Ù¶h>
+1 €…sÀ›>
+7 0 2 0 0 0
+0 0 0
+6 4 mata 8 0 15 7 1 2 7 0 2 7 0 10 1       p;
+1 `+Ö?~E|>
+1 
+y¡3P†Š>
+1 „E¤J‘>
+1 lã>è0ğ“>
+1 ¨¦¡gŠÆ“>
+1 $=E‰>
+1 Ø^&ÑY†>
+1 @ò$Ù¶h>
+1       €;
+7 0 10 1       °;
+1 ø5y÷ÈC³>
+1 Ø(ÑëFÁ>
+1 0r–²éNÆ>
+1 ¨Î=‹ôÈ>
+1 0üèŸæùÇ>
+1 F 7/{Ã>
+1 €3»†	µ¹>
+1 €…sÀ›>
+1       À»
+6 5 matat 8 0 15 7 1 2 7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 6 matcol 8 0 15 7 1 2 7 11 2 7 0 1 1 ÀnİÍSm¿
+7 0 1 1 İïPè©?
+6 7 matcont 8 0 15 7 1 2 7 0 2 7 23 4 1 )¬Šºæ>
+1 ¨ìü5@?
+1 E»
+)?©–?
+0 1 0
+7 23 4 1 »S”Kã?
+1 ‚âÇ˜»–`?
+1 
+×£p=
+§?
+0 1 0
+6 8 matdelta 8 0 15 7 1 2 7 0 2 7 0 2 1 E»
+)?©–?
+0 1 0
+7 0 2 1 
+×£p=
+§?
+0 1 0
+6 9 matdelta0 8 0 15 7 1 2 7 11 2 7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+7 0 2 0 1 0
+0 1 0
+6 10 matdelta0t 8 0 15 7 1 2 7 11 2 7 0 2 1 ÀnİÍSm¿
+0 1 0
+7 0 2 1 İïPè©?
+0 1 0
+6 9 matdeltal 8 0 15 7 1 2 7 11 2 7 0 2 1 ÜWW»Tè@
+1 E»
+)?©–?
+7 0 2 1 è*Š6Øå'@
+1 
+×£p=
+§?
+6 15 matdeltalambdal 8 0 15 7 1 2 7 11 2 7 0 2 1 ÜWW»Tè@
+1 è*Š6Øå'@
+7 0 2 0 1 0
+0 1 0
+6 22 matdeltalambdalambdalt 8 0 15 7 1 2 7 0 2 1 ôı¼±[ãÀ
+1 ³qzx†{¿
+6 16 matdeltalambdall 8 0 15 7 1 2 7 11 2 7 0 2 1 ÜWW»Tè@
+1 è*Š6Øå'@
+7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 16 matdeltalambdalt 8 0 15 7 1 2 7 11 2 7 0 2 1 ¨ìü5@?
+1 E»
+)?©–?
+7 0 2 1 ‚âÇ˜»–`?
+1 
+×£p=
+§?
+6 10 matdeltalj 8 0 15 7 1 2 7 0 2 7 0 1 1 )Ğ'ò$éª¿
+7 0 1 1 ;ÈÌıfT¿
+6 10 matdeltall 8 0 15 7 1 2 7 0 2 7 0 2 1 63’Bú¿
+1 °N‰3\'Y¿
+7 0 2 1 / DŠ¦¹¾
+1 ˜‡©;¤á÷¾
+6 11 matdeltallj 8 0 15 7 1 2 7 11 2 7 23 2 1 ÀnİÍSm¿
+1 İïPè©?
+7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 10 matdeltalt 8 0 15 7 1 2 7 11 2 7 0 2 1 ¨ìü5@?
+1 ‚âÇ˜»–`?
+7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 11 matdeltaltj 8 0 15 7 1 2 7 11 4 7 0 2 1 )¬Šºæ>
+1 »S”Kã?
+7 0 2 1 ¨ìü5@?
+1 ‚âÇ˜»–`?
+7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+7 0 2 0 1 0
+0 1 0
+6 9 matdeltat 8 0 15 7 1 2 7 11 4 7 0 2 1 )¬Šºæ>
+1 »S”Kã?
+7 0 2 1 ¨ìü5@?
+1 ‚âÇ˜»–`?
+7 0 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+7 0 2 0 1 0
+0 1 0
+6 10 matdeltatj 8 0 15 7 1 2 7 11 10 7 0 1 0 0 0
+7 0 1 1 ú~9^9î8?
+7 0 1 1 HæÎ¢0Ul¿
+7 0 1 1 —Æƒ» ˜¿
+7 0 1 1 'ÅìÉáª¡¿
+7 0 1 1 ¡ŞÚr?:¿
+7 0 1 1 ç¿ï6â“¿
+7 0 1 1 Yw£ÄëP~¿
+7 0 1 1 ¼ÿrä=¿
+7 0 1 0 0 0
+6 8 matimage 8 0 15 7 1 2 7 11 4 7 0 1 1 9ˆ\ÈÍëÁ
+7 0 1 1 k¤„5İäĞ@
+7 0 1 1 áIe3ÜpÀ
+7 0 1 1 ÓÂwü£Î?
+6 9 matlambda 8 0 15 7 1 2 7 0 4 7 0 1 0 0 0
+7 0 1 0 0 0
+7 0 1 0 0 0
+7 0 1 0 0 0
+6 10 matlambdaj 8 0 15 7 1 2 7 0 2 7 0 1 0 0 0
+7 0 1 0 0 0
+6 15 matlambdalambda 8 0 15 7 1 2 7 11 4 7 0 1 8 0 7 7 1 2 6 1 x 0 3 0
+7 0 1 8 0 7 7 1 2 6 1 x 0 2 0
+7 0 1 6 1 x 7 0 1 0 1 0
+6 6 matphi 8 0 15 7 1 2 7 0 2 7 0 1 8 0 7 7 1 2 6 1 x 0 3 0
+7 0 1 8 0 7 7 1 2 6 1 x 0 2 0
+6 8 matphi1k 8 0 15 7 1 2 7 0 2 7 0 1 6 1 x 7 0 1 0 1 0
+6 7 matphik 8 0 15 7 1 2 7 11 10 7 0 1 1 ÀnİÍSm¿
+7 0 1 1 6Y£¢Ñ¿
+7 0 1 1 z]¢zkÄ?
+7 0 1 1 ²×»?Ş«ğ?
+7 0 1 1 °N]yø?
+7 0 1 1 ]›kô?
+7 0 1 1 h‘í|?5ë?
+7 0 1 1 ‚V`ÈêV×?
+7 0 1 1 a†ˆ)±?
+7 0 1 1 İïPè©?
+6 5 matyi 8 0 15 7 1 2 0 10 0
+6 1 n 8 0 15 7 1 2 8 0 73 7 1 3 7 1 0 7 1 0 7 0 184 8 0 15 7 1 2 7 23 10 1 E»
+)?©–?
+1  <÷.™?
+1 £#¹ü‡ô›?
+1 ~têÊgy?
+1 ÁÅŠLÃ ?
+1 ˜4Fë¨j¢?
+1 ‡Ü7àó£?
+1 ƒ/L¦
+F¥?
+1 IFÎÂ¦?
+1 
+×£p=
+§?
+6 6 listxi 8 0 15 7 1 2 7 23 10 8 0 2 1 ÀnİÍSm?
+8 0 2 1 6Y£¢Ñ?
+1 z]¢zkÄ?
+1 ²×»?Ş«ğ?
+1 °N]yø?
+1 ]›kô?
+1 h‘í|?5ë?
+1 ‚V`ÈêV×?
+1 a†ˆ)±?
+1 İïPè©?
+6 6 listyi 8 0 15 7 1 2 7 23 4 8 0 7 7 1 2 6 1 x 0 3 0
+8 0 7 7 1 2 6 1 x 0 2 0
+6 1 x 0 1 0
+6 7 listphi 8 0 15 7 1 2 7 23 2 1 E»
+)?©–?
+1 
+×£p=
+§?
+6 10 listxomega 8 0 15 7 1 2 7 23 2 8 0 2 1 ÀnİÍSm?
+1 İïPè©?
+6 15 listcontraintes 8 0 15 7 1 2 7 23 2 0 0 0
+0 0 0
+6 19 listordrederivation 8 0 15 7 1 2 8 0 0 'dim' 6 6 listxi 6 1 n 8 0 15 7 1 2 8 0 0 'dim' 6 7 listphi 6 1 p 8 0 15 7 1 2 8 0 0 'dim' 6 15 listcontraintes 6 1 k 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 0 1 0
+6 10 matlambdaj 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 0 1 0
+6 6 matphi 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 7 listphi 0 1 0
+6 6 matphi 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 7 listuux 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 7 listuuy 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 0 1 0
+6 7 matphik 8 0 15 7 1 2 8 0 0 'subMat' 7 1 5 6 6 matphi 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 0 0 0
+6 1 p 0 0 0
+6 7 matphik 8 0 15 7 1 2 8 0 0 'subMat' 7 1 5 6 6 matphi 0 0 0
+0 0 0
+8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+0 0 0
+6 8 matphi1k 8 0 15 7 1 2 8 0 0 'mat2list' 6 7 matphik 6 8 listphik 8 0 15 7 1 2 8 0 0 'mat2list' 6 8 matphi1k 6 9 listphi1k 8 0 15 7 1 2 8 0 0 'newList' 0 0 0
+6 17 listcarresresidus 8 0 -1 label 6 5 debut 8 0 70 7 0 3 8 0 39 7 1 2 6 1 k 0 0 0
+8 0 72 7 1 3 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 10 matdelta0t 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 9 matdeltal 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 10 matdeltalj 0 0 0
+8 0 70 7 0 3 8 0 74 7 1 2 6 1 k 0 0 0
+8 0 -1 goto 6 2 k0 0 0 0
+8 0 70 7 0 3 8 0 74 7 1 2 6 1 k 0 1 0
+8 0 -1 goto 6 2 k1 0 0 0
+8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 15 listcontraintes 0 1 0
+6 7 matcont 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 9 matdelta0 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 10 matdeltalt 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 p 6 8 matdelta 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 6 1 k 6 9 matdeltat 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 0 1 0
+6 5 matyi 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 6 listyi 0 1 0
+6 5 matyi 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 0 1 0
+6 10 matlambdaj 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 0 1 0
+6 6 matphi 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 7 listphi 0 1 0
+6 6 matphi 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 0 1 0
+6 7 matphik 8 0 15 7 1 2 8 0 0 'subMat' 7 1 5 6 6 matphi 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 0 0 0
+6 1 p 0 0 0
+6 7 matphik 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 0 1 0
+6 8 matphi1k 8 0 15 7 1 2 8 0 0 'subMat' 7 1 5 6 6 matphi 0 0 0
+0 0 0
+8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+0 0 0
+6 8 matphi1k 8 0 15 7 1 2 8 0 0 'mat2list' 6 7 matphik 6 8 listphik 8 0 15 7 1 2 8 0 0 'mat2list' 6 8 matphi1k 6 9 listphi1k 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 j 8 0 72 7 1 4 8 0 15 7 1 2 8 0 82 7 1 2 6 19 listordrederivation 6 1 j 6 1 c 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 15 listdeltadelta0 8 0 15 7 1 2 8 0 0 'diff' 7 1 3 6 7 listphi 6 1 x 6 1 c 6 15 listdeltadelta0 8 0 15 7 1 2 8 0 0 'subst' 7 1 2 6 15 listdeltadelta0 8 0 40 7 1 2 6 1 x 8 0 82 7 1 2 6 10 listxomega 6 1 j 8 0 82 7 1 2 6 8 matdelta 6 1 j 8 0 15 7 1 2 8 0 0 'subMat' 7 1 5 6 8 matdelta 0 0 0
+8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 1 7 1 2 6 1 p 0 -1 0
+6 9 matdelta0 8 0 15 7 1 2 8 0 0 'transpose' 6 9 matdelta0 6 10 matdelta0t 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 9 matdelta0 6 6 delta0 8 0 70 7 0 3 8 0 74 7 1 2 6 6 delta0 0 0 0
+8 0 43 12 105 |calculs impossibles. Modifiez l'ordre des fonctions d'essai, en commenÃ§ant du cÃ´tÃ© droit, par exemple. 0 0 0
+8 0 15 7 1 2 8 0 0 'transpose' 6 8 matdelta 6 9 matdeltat 8 0 15 7 1 2 8 0 0 'transpose' 6 9 matdelta0 6 10 matdeltalt 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 0 1 0
+6 10 matdeltall 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 6 11 matdeltallj 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 11 matdeltaltj 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 10 matdeltalj 8 0 15 7 1 2 6 15 listcontraintes 8 0 82 7 1 2 6 10 matdeltalt 0 0 0
+8 0 15 7 1 2 8 0 0 'transpose' 6 10 matdeltalt 6 9 matdeltal 8 0 15 7 1 2 6 10 matdeltalt 6 11 matdeltaltj 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 10 matdeltalt 6 12 detmatdeltal 8 0 15 7 1 2 6 12 detmatdeltal 8 0 82 7 1 2 6 10 matdeltall 7 1 2 0 0 0
+0 0 0
+8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+8 0 75 6 1 j 8 0 72 7 1 5 8 0 15 7 1 2 6 9 matdeltat 6 10 matdeltatj 8 0 15 7 1 2 8 0 82 7 1 2 6 9 matdeltat 6 1 j 8 0 82 7 1 2 6 11 matdeltaltj 0 0 0
+8 0 15 7 1 2 8 0 0 'transpose' 6 11 matdeltaltj 6 10 matdeltalj 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 11 matdeltaltj 6 14 detmatdeltallj 8 0 15 7 1 2 6 14 detmatdeltallj 8 0 82 7 1 2 6 11 matdeltallj 7 1 2 0 0 0
+6 1 j 8 0 71 7 0 4 8 0 15 7 1 2 0 1 0
+6 1 l 8 0 36 7 1 2 6 1 l 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 l 8 0 72 7 1 4 8 0 15 7 1 2 8 0 0 'col' 7 1 2 6 9 matdelta0 7 0 1 8 0 1 7 1 2 6 1 l 0 -1 0
+8 0 82 7 1 2 6 10 matdeltalt 6 1 l 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 10 matdeltalt 6 13 detmatdeltalt 8 0 15 7 1 2 6 13 detmatdeltalt 8 0 82 7 1 2 6 10 matdeltall 7 1 2 6 1 l 0 0 0
+8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+8 0 75 6 2 jj 8 0 72 7 1 5 8 0 15 7 1 2 6 10 matdeltalt 6 11 matdeltaltj 8 0 15 7 1 2 8 0 82 7 1 2 6 9 matdeltat 6 2 jj 8 0 82 7 1 2 6 11 matdeltaltj 0 0 0
+8 0 15 7 1 2 8 0 0 'transpose' 6 11 matdeltaltj 6 10 matdeltalj 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 11 matdeltaltj 6 14 detmatdeltaltj 8 0 15 7 1 2 6 14 detmatdeltaltj 8 0 82 7 1 2 6 11 matdeltallj 7 1 2 6 1 l 6 2 jj 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 9 listimage 8 0 15 7 1 2 8 0 0 'newList' 0 0 0
+6 9 listsomme 8 0 15 7 1 2 8 0 0 'newList' 0 0 0
+6 14 listsommesomme 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 11 listdeltall 8 0 15 7 1 2 8 0 0 'mat2list' 6 10 matdeltall 6 11 listdeltall 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 6 1 n 6 9 listmatxi 8 0 15 7 1 2 8 0 0 'somme' 7 1 4 8 0 4 7 1 2 8 0 4 7 1 2 8 0 48 7 1 2 0 -1 0
+6 1 j 8 0 82 7 1 2 6 11 listdeltall 6 1 j 8 0 82 7 1 2 6 8 listphik 6 1 j 6 1 j 0 0 0
+8 0 1 7 1 2 6 1 k 0 -1 0
+6 14 listsommesomme 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+6 14 listsommesomme 6 1 h 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 2 6 1 n 0 -1 0
+8 0 75 6 2 jj 8 0 15 7 1 2 8 0 81 7 1 2 6 14 listsommesomme 8 0 82 7 1 2 6 6 listxi 6 2 jj 8 0 82 7 1 2 6 9 listsomme 6 2 jj 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 9 listimage 8 0 15 7 1 2 8 0 1 7 1 2 8 0 4 7 1 2 6 6 delta0 6 6 listyi 8 0 2 6 9 listsomme 6 9 listimage 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 0 1 0
+6 8 matimage 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 6 10 listphi1kt 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 8 listmata 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 6 4 mata 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 8 0 1 7 1 2 6 1 p 8 0 2 6 1 k 6 1 n 6 5 matat 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 0 1 0
+6 9 matlambda 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+8 0 75 6 1 j 8 0 72 7 1 4 8 0 15 7 1 2 8 0 1 7 1 2 8 0 4 7 1 2 6 6 delta0 8 0 82 7 1 2 6 9 listphi1k 6 1 j 8 0 2 8 0 0 'somme' 7 1 4 8 0 4 7 1 2 8 0 4 7 1 2 8 0 48 7 1 2 0 -1 0
+6 1 l 8 0 82 7 1 2 6 11 matdeltallj 7 1 2 6 1 l 6 1 j 8 0 82 7 1 2 6 7 matphik 7 1 2 6 1 l 0 0 0
+6 1 l 0 0 0
+8 0 1 7 1 2 6 1 k 0 -1 0
+6 9 listmatax 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'eval' 6 9 listmatax 6 6 fmatax 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 2 6 1 n 0 -1 0
+8 0 75 6 2 jj 8 0 15 7 1 2 8 0 81 7 1 2 6 9 listmatax 8 0 82 7 1 2 6 6 listxi 6 2 jj 8 0 82 7 1 2 6 8 listmata 6 2 jj 8 0 15 7 1 2 6 8 listmata 8 0 82 7 1 2 6 5 matat 6 1 j 8 0 15 7 1 2 8 0 0 'transpose' 6 5 matat 6 4 mata 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 r 8 0 36 7 1 2 6 1 r 8 0 1 7 1 2 6 1 n 0 -1 0
+8 0 75 6 1 r 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 t 8 0 36 7 1 2 6 1 t 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 t 8 0 70 7 0 3 8 0 74 7 1 2 8 0 82 7 1 2 6 19 listordrederivation 6 1 t 0 0 0
+8 0 70 7 0 3 8 0 33 7 1 2 8 0 74 7 1 2 8 0 82 7 1 2 6 10 listxomega 6 1 t 8 0 82 7 1 2 6 6 listxi 6 1 r 8 0 74 7 1 2 8 0 82 7 1 2 6 15 listcontraintes 6 1 t 8 0 82 7 1 2 6 6 listyi 6 1 r 8 0 72 7 1 2 8 0 15 7 1 2 0 0 0
+8 0 82 7 1 2 6 9 listimage 6 1 r 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+8 0 75 6 2 jj 8 0 15 7 1 2 0 0 0
+8 0 82 7 1 2 6 4 mata 7 1 2 6 1 r 6 2 jj 0 0 0
+0 0 0
+8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 9 listimage 0 1 0
+6 8 matimage 8 0 15 7 1 2 8 0 0 'simult' 7 1 2 8 0 4 7 1 2 6 5 matat 6 4 mata 8 0 4 7 1 2 6 5 matat 6 8 matimage 6 9 matlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 10 listlambda 8 0 15 7 1 2 8 0 0 'mat2list' 6 9 matlambda 6 10 listlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 9 listsigma 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 2 jj 8 0 15 7 1 2 8 0 0 'somme' 7 1 4 8 0 4 7 1 2 8 0 82 7 1 2 6 9 matlambda 7 1 2 6 1 j 0 0 0
+8 0 82 7 1 2 6 8 matdelta 7 1 2 6 2 jj 6 1 j 6 1 j 0 0 0
+8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 0 -1 0
+8 0 82 7 1 2 6 9 listsigma 6 2 jj 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 15 matdeltalambdal 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 16 matdeltalambdalt 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 6 1 k 6 22 matdeltalambdalambdalt 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 0 1 0
+6 16 matdeltalambdall 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 k 0 1 0
+6 15 matlambdalambda 8 0 15 7 1 2 8 0 0 'transpose' 6 9 matdelta0 6 16 matdeltalambdalt 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 16 listdeltalambdal 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 7 listcol 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 17 listdeltalambdall 8 0 15 7 1 2 8 0 0 'newList' 6 1 k 6 16 listlambdalambda 8 0 15 7 1 2 6 9 listsigma 8 0 82 7 1 2 6 16 matdeltalambdalt 0 0 0
+8 0 15 7 1 2 6 16 matdeltalambdalt 6 22 matdeltalambdalambdalt 8 0 15 7 1 2 8 0 0 'transpose' 6 16 matdeltalambdalt 6 15 matdeltalambdal 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 15 matdeltalambdal 6 18 detmatdeltalambdal 8 0 15 7 1 2 6 18 detmatdeltalambdal 8 0 82 7 1 2 6 16 matdeltalambdall 0 0 0
+8 0 15 7 1 2 6 16 matdeltalambdalt 6 22 matdeltalambdalambdalt 8 0 71 7 0 4 8 0 15 7 1 2 0 1 0
+6 1 l 8 0 36 7 1 2 6 1 l 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 l 8 0 72 7 1 8 8 0 15 7 1 2 8 0 0 'col' 7 1 2 6 9 matdelta0 7 0 1 8 0 1 7 1 2 6 1 l 0 -1 0
+6 6 matcol 8 0 15 7 1 2 8 0 0 'mat2list' 6 6 matcol 6 7 listcol 8 0 15 7 1 2 6 7 listcol 8 0 82 7 1 2 6 16 matdeltalambdalt 6 1 l 8 0 15 7 1 2 8 0 0 'transpose' 6 16 matdeltalambdalt 6 15 matdeltalambdal 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'det' 6 16 matdeltalambdalt 6 18 detmatdeltalambdal 8 0 15 7 1 2 6 18 detmatdeltalambdal 8 0 82 7 1 2 6 16 matdeltalambdall 6 1 l 8 0 15 7 1 2 8 0 0 'mat2list' 6 16 matdeltalambdall 6 17 listdeltalambdall 8 0 15 7 1 2 8 0 82 7 1 2 6 10 matdelta0t 8 0 1 7 1 2 6 1 l 0 -1 0
+8 0 82 7 1 2 6 16 matdeltalambdalt 6 1 l 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 l 8 0 36 7 1 2 6 1 l 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 l 8 0 72 7 1 2 8 0 15 7 1 2 8 0 5 7 1 2 8 0 4 7 1 2 8 0 48 7 1 2 0 -1 0
+6 1 l 8 0 1 7 1 2 8 0 82 7 1 2 6 11 listdeltall 6 1 l 8 0 2 8 0 82 7 1 2 6 17 listdeltalambdall 6 1 l 6 6 delta0 8 0 82 7 1 2 6 16 listlambdalambda 6 1 l 8 0 15 7 1 2 8 0 82 7 1 2 6 16 listlambdalambda 6 1 l 8 0 82 7 1 2 6 10 listlambda 8 0 1 7 1 3 6 1 p 8 0 2 6 1 k 6 1 l 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 10 listlambda 0 1 0
+6 9 matlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 6 listfx 8 0 15 7 1 2 8 0 4 7 1 2 6 10 listlambda 6 7 listphi 6 6 listfx 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 11 listresidus 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 16 listcarresresdus 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'somme' 6 6 listfx 6 1 f 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 j 8 0 70 7 0 3 8 0 37 7 1 2 8 0 82 7 1 2 6 19 listordrederivation 6 1 j 0 0 0
+8 0 15 7 1 2 8 0 81 7 1 2 6 1 f 8 0 82 7 1 2 6 10 listxomega 6 1 j 8 0 82 7 1 2 6 15 listcontraintes 6 1 j 8 0 15 7 1 2 0 0 0
+8 0 82 7 1 2 6 15 listcontraintes 6 1 j 8 0 -1 goto 6 10 affichages 8 0 -1 label 6 2 k0 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 6 1 p 6 4 mata 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 p 6 1 n 6 5 matat 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 12 listmatamata 8 0 15 7 1 2 6 6 listyi 6 9 listimage 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 9 listimage 0 1 0
+6 8 matimage 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 p 0 -1 0
+8 0 75 6 1 j 8 0 72 7 1 3 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 12 listmatamata 8 0 15 7 1 2 8 0 0 'subst' 7 1 2 6 7 listphi 8 0 40 7 1 2 6 1 x 6 6 listxi 6 12 listmatamata 8 0 15 7 1 2 6 12 listmatamata 6 5 matat 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 p 0 -1 0
+8 0 75 6 1 j 8 0 70 7 0 3 8 0 74 7 1 2 8 0 82 7 1 2 6 7 listphi 6 1 j 0 1 0
+8 0 72 7 1 3 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 13 listmatamatat 8 0 -1 Fill 7 1 2 0 1 0
+6 13 listmatamatat 8 0 15 7 1 2 6 13 listmatamatat 8 0 82 7 1 2 6 5 matat 6 1 j 0 0 0
+8 0 15 7 1 2 8 0 0 'transpose' 6 5 matat 6 4 mata 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'simult' 7 1 2 8 0 4 7 1 2 8 0 0 'transpose' 6 4 mata 6 4 mata 8 0 4 7 1 2 8 0 0 'transpose' 6 4 mata 6 8 matimage 6 9 matlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 10 listlambda 8 0 15 7 1 2 8 0 0 'mat2list' 6 9 matlambda 6 10 listlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 6 listfx 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 6 listfx 8 0 15 7 1 2 8 0 46 7 1 2 6 10 listlambda 6 7 listphi 6 6 listfx 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 11 listresidus 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 17 listcarresresidus 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'somme' 6 6 listfx 6 1 f 8 0 -1 goto 6 10 affichages 8 0 -1 label 6 2 k1 8 0 15 7 1 2 8 0 81 7 1 2 6 7 newlist 6 1 p 6 11 listderivex 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 9 listdelta 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 15 listderivephijx 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 9 listimage 8 0 15 7 1 2 8 0 0 'newList' 0 0 0
+6 10 listimagex 8 0 15 7 1 2 8 0 82 7 1 2 6 19 listordrederivation 0 0 0
+6 1 c 8 0 15 7 1 2 8 0 0 'diff' 7 1 3 6 7 listphi 6 1 x 6 1 c 6 15 listderivephijx 8 0 15 7 1 2 8 0 0 'subst' 7 1 2 6 15 listderivephijx 8 0 40 7 1 2 6 1 x 8 0 82 7 1 2 6 10 listxomega 0 0 0
+6 14 listderivephij 8 0 15 7 1 2 8 0 82 7 1 2 6 14 listderivephij 8 0 1 7 1 2 6 1 p 0 -1 0
+6 6 delta0 8 0 70 7 0 3 8 0 74 7 1 2 6 6 delta0 0 0 0
+8 0 43 12 94 |Calculs impossibles. Modifiez l'ordre des fonctions d'essais phi en commenÃ§ant par la droite. 0 0 0
+8 0 15 7 1 2 8 0 82 7 1 2 6 15 listcontraintes 0 0 0
+6 6 delta1 8 0 15 7 1 2 8 0 4 7 1 2 8 0 82 7 1 2 6 7 listphi 8 0 1 7 1 2 6 1 p 0 -1 0
+6 6 delta1 6 10 listimagex 8 0 15 7 1 2 8 0 1 7 1 2 8 0 4 7 1 2 6 6 delta0 6 6 listyi 8 0 2 8 0 0 'subst' 7 1 2 6 10 listimagex 8 0 40 7 1 2 6 1 x 6 6 listxi 6 9 listimage 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 0 1 0
+6 8 matimage 8 0 15 7 1 2 8 0 0 'list2mat' 7 1 2 6 9 listimage 0 1 0
+6 8 matimage 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 9 listmatat 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 6 1 n 8 0 1 7 1 2 6 1 p 0 -1 0
+6 4 mata 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 8 0 1 7 1 2 6 1 p 0 -1 0
+6 1 n 6 5 matat 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 p 0 -2 0
+8 0 75 6 1 j 8 0 72 7 1 2 8 0 15 7 1 2 8 0 1 7 1 2 8 0 4 7 1 2 6 6 delta0 8 0 0 'subst' 7 1 2 8 0 82 7 1 2 6 7 listphi 6 1 j 8 0 40 7 1 2 6 1 x 6 6 listxi 8 0 2 8 0 4 7 1 2 8 0 82 7 1 2 6 14 listderivephij 6 1 j 8 0 0 'subst' 7 1 2 8 0 82 7 1 2 6 7 listphi 8 0 1 7 1 2 6 1 p 0 -1 0
+8 0 40 7 1 2 6 1 x 6 6 listxi 6 9 listmatat 8 0 15 7 1 2 6 9 listmatat 8 0 82 7 1 2 6 5 matat 6 1 j 8 0 15 7 1 2 8 0 0 'transpose' 6 5 matat 6 4 mata 8 0 15 7 1 2 8 0 0 'newMat' 7 1 2 8 0 1 7 1 2 6 1 p 0 -1 0
+0 1 0
+6 9 matlambda 8 0 15 7 1 2 8 0 0 'approx' 8 0 0 'simult' 7 1 2 8 0 4 7 1 2 6 5 matat 6 4 mata 8 0 4 7 1 2 6 5 matat 6 8 matimage 6 9 matlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 10 listlambda 8 0 15 7 1 2 8 0 0 'mat2list' 6 9 matlambda 6 10 listlambda 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 9 listsigma 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 p 0 -2 0
+8 0 75 6 1 j 8 0 72 7 1 3 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 16 listlambdalambda 8 0 15 7 1 2 8 0 4 7 1 2 8 0 82 7 1 2 6 10 listlambda 6 1 j 8 0 82 7 1 2 6 14 listderivephij 6 1 j 6 16 listlambdalambda 8 0 15 7 1 2 6 16 listlambdalambda 8 0 82 7 1 2 6 9 listsigma 6 1 j 8 0 15 7 1 2 8 0 0 'somme' 6 9 listsigma 6 5 sigma 8 0 15 7 1 2 8 0 5 7 1 2 8 0 1 7 1 2 6 6 delta1 8 0 2 6 5 sigma 6 6 delta0 6 7 lambdap 8 0 15 7 1 2 6 7 lambdap 8 0 82 7 1 2 6 10 listlambda 8 0 1 7 1 2 6 1 p 0 -1 0
+8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 6 listfx 8 0 15 7 1 2 8 0 0 'newList' 6 1 p 6 6 listfx 8 0 15 7 1 2 8 0 4 7 1 2 6 10 listlambda 6 7 listphi 6 6 listfx 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 11 listresidus 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 11 listresidus 8 0 15 7 1 2 8 0 0 'newList' 6 1 n 6 17 listcarresresidus 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'somme' 6 6 listfx 6 1 f 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 k 0 -1 0
+8 0 75 6 1 j 8 0 70 7 0 3 8 0 37 7 1 2 8 0 82 7 1 2 6 19 listordrederivation 6 1 j 0 0 0
+8 0 15 7 1 2 8 0 81 7 1 2 6 1 f 8 0 82 7 1 2 6 10 listxomega 6 1 j 8 0 82 7 1 2 6 15 listcontraintes 6 1 j 8 0 15 7 1 2 0 0 0
+8 0 82 7 1 2 6 15 listcontraintes 6 1 j 8 0 -1 label 6 10 affichages 8 0 15 7 1 2 8 0 0 'somme' 7 1 4 8 0 0 sqrt 8 0 1 7 1 2 8 0 48 7 1 2 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listxi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 2 8 0 82 7 1 2 6 6 listxi 6 1 j 0 2 0
+8 0 48 7 1 2 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 2 8 0 82 7 1 2 6 6 listyi 6 1 j 0 2 0
+6 1 j 0 0 0
+8 0 1 7 1 2 6 1 n 0 -2 0
+6 16 longueurpolygone 8 0 15 7 19 2 8 0 73 7 1 3 7 1 1 6 1 x 7 1 1 0 0 0
+8 0 0 'diff' 7 1 3 8 0 81 7 1 2 6 1 f 6 1 x 6 1 x 0 1 0
+6 9 deriveefx 8 0 15 7 1 2 8 0 10 8 0 0 'int' 7 1 4 8 0 0 sqrt 8 0 1 7 1 2 0 1 0
+8 0 48 7 1 2 8 0 81 7 1 2 6 9 deriveefx 6 1 x 0 2 0
+6 1 x 8 0 82 7 1 2 6 6 listxi 0 0 0
+8 0 82 7 1 2 6 6 listxi 8 0 1 7 1 2 6 1 n 0 -1 0
+6 16 longueurcourbefx 8 0 15 7 1 2 8 0 5 7 1 2 6 16 longueurpolygone 6 16 longueurcourbefx 6 7 qualrep 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 2 jj 8 0 36 7 1 2 6 2 jj 8 0 1 7 1 2 6 1 n 0 -1 0
+8 0 75 6 2 jj 8 0 72 7 1 4 8 0 15 7 1 2 8 0 0 'approx' 8 0 10 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listyi 6 2 jj 8 0 2 8 0 81 7 1 2 6 1 f 8 0 82 7 1 2 6 6 listxi 6 2 jj 8 0 82 7 1 2 6 11 listresidus 6 2 jj 8 0 15 7 1 2 8 0 0 'somme' 6 11 listresidus 6 12 sommeresidus 8 0 15 7 1 2 8 0 0 'approx' 8 0 4 7 1 2 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listyi 6 2 jj 8 0 2 8 0 81 7 1 2 6 1 f 8 0 82 7 1 2 6 6 listxi 6 2 jj 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listyi 6 2 jj 8 0 2 8 0 81 7 1 2 6 1 f 8 0 82 7 1 2 6 6 listxi 6 2 jj 8 0 82 7 1 2 6 17 listcarresresidus 6 2 jj 8 0 15 7 1 2 8 0 0 'somme' 6 17 listcarresresidus 6 18 sommecarresresidus 8 0 15 7 1 2 8 0 5 7 1 2 6 12 sommeresidus 6 1 n 6 11 residumoyen 8 0 15 7 1 2 8 0 5 7 1 2 6 18 sommecarresresidus 6 1 n 6 16 residucarremoyen 8 0 15 7 1 2 8 0 0 'max' 8 0 0 'concat' 7 1 2 6 6 listxi 6 10 listxomega 6 9 xmaxgraph 8 0 15 7 1 2 8 0 0 'min' 8 0 0 'concat' 7 1 2 6 6 listxi 6 10 listxomega 6 9 xmingraph 8 0 15 7 1 2 8 0 0 'max' 8 0 0 'concat' 7 1 2 6 6 listyi 6 10 listyomega 6 9 ymaxgraph 8 0 15 7 1 2 8 0 0 'min' 8 0 0 'concat' 7 1 2 6 6 listyi 6 10 listyomega 6 9 ymingraph 8 0 15 7 1 2 8 0 0 'romberg' 7 1 2 8 0 10 8 0 81 7 1 2 6 1 f 6 1 x 8 0 40 7 1 2 6 1 x 8 0 28 7 1 2 6 9 xmingraph 6 9 xmaxgraph 6 14 airesousfxromb 8 0 15 7 1 2 0 0 0
+6 16 aire_sous_tendue 8 0 15 7 1 2 0 0 0
+6 5 airei 8 0 71 7 0 4 8 0 15 7 1 2 0 0 0
+6 1 j 8 0 36 7 1 2 6 1 j 8 0 1 7 1 2 6 1 n 0 -2 0
+8 0 15 7 1 2 8 0 75 6 1 j 6 1 j 8 0 72 7 1 2 8 0 70 7 0 3 8 0 35 7 1 2 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listyi 6 1 j 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+0 0 0
+8 0 72 7 1 2 8 0 15 7 1 2 8 0 5 7 1 2 8 0 1 7 1 2 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listxi 6 1 j 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 2 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listxi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 82 7 1 2 6 6 listyi 6 1 j 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 2 8 0 82 7 1 2 6 6 listyi 6 1 j 6 3 xni 8 0 15 7 1 2 8 0 4 7 1 2 1       à?
+8 0 1 7 1 2 8 0 10 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listyi 6 1 j 8 0 1 7 1 2 6 3 xni 8 0 2 8 0 82 7 1 2 6 6 listxi 6 1 j 8 0 2 8 0 4 7 1 2 8 0 0 'sign' 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listyi 6 1 j 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 10 8 0 4 7 1 2 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 1 7 1 2 6 3 xni 8 0 2 8 0 82 7 1 2 6 6 listxi 8 0 1 7 1 2 6 1 j 0 1 0
+6 5 airei 8 0 15 7 1 2 8 0 4 7 1 2 1       à?
+8 0 10 8 0 4 7 1 2 8 0 1 7 1 2 8 0 10 8 0 82 7 1 2 6 6 listyi 6 1 j 8 0 10 8 0 82 7 1 2 6 6 listyi 8 0 1 7 1 2 6 1 j 0 1 0
+8 0 10 8 0 1 7 1 2 8 0 82 7 1 2 6 6 listxi 6 1 j 8 0 2 8 0 82 7 1 2 6 6 listxi 8 0 1 7 1 2 6 1 j 0 1 0
+6 5 airei 8 0 15 7 1 2 8 0 1 7 1 2 6 16 aire_sous_tendue 6 5 airei 6 16 aire_sous_tendue 8 0 43 8 0 1 7 1 8 12 6 | f(x)= 8 0 81 7 1 2 6 1 f 6 1 x 12 15 | rÃ©sidumoyen=  6 11 residumoyen 12 7 | mata=  6 4 mata 12 11 | matimage=  6 8 matimage 6 8 nuages2d 8 0 15 7 1 2 0 4 0
+6 1 p 8 0 15 7 1 2 1 #ıOåõ?
+6 7 qualrep 8 0 15 7 1 2 0 10 0
+6 1 r 8 0 15 7 1 2 1 xÓ8*>¨³?
+6 16 residucarremoyen 8 0 15 7 1 2 1 ğ·ª Í?
+6 11 residumoyen 8 0 15 7 1 2 1 ºè¢‹.º @
+6 5 sigma 8 0 15 7 1 2 1 VÇ´M’è?
+6 18 sommecarresresidus 8 0 15 7 1 2 1 Öp²ê @
+6 12 sommeresidus 8 0 15 7 1 2 0 2 0
+6 1 t 8 0 15 7 1 2 1 
+×£p=
+§?
+6 9 xmaxgraph 8 0 15 7 1 2 1 E»
+)?©–?
+6 9 xmingraph 8 0 15 7 1 2 1 jı™:‰i™?
+6 3 xni 8 0 15 7 1 2 0 33 0
+6 9 ymaxgraph 8 0 15 7 1 2 0 -2 0
+6 9 ymingraph 8 0 0 'xcas_mode' 0 0 0
+

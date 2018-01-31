@@ -1,0 +1,150 @@
+droitesmc():={
+ 
+  restart ;
+  cas_setup(0,0,0,1,0,1e-15,12,8,0);
+  // 1 list des xi
+  // 2 list des yi
+  // 3 le commutateur 0:pas de contrainte , 1: 1 contrainte sur coordonnées , 2: 1 contrainte sur la pente
+  // 4 xomega
+  // 5 yomega
+  // 6 p1
+ 
+  listxi:=list[%1];
+  listyi:=list[%2];
+  xMoyen := approx(moyenne(listxi)) ;   //approx veut dire qu'on veut des nombres à virgule
+  yMoyen := approx(moyenne(listyi)) ;
+  n:=dim(listxi);
+
+  switch (%3) {
+    case 0:
+          {
+             //contraintes: 0   
+             xomega:=mean(listxi);
+             yomega:=mean(listyi);
+             listxxi:=concat(listxi, xomega);
+             listyyi:=concat(listyi,yomega);
+             xmaxgraph  := max(listxi);
+             xmingraph  := min(listxi);
+             ymaxgraph  := max(listyi);
+             ymingraph  := min(listyi);
+           }
+    case 1:
+        {
+      // contraintes: 1
+      // Contrainte sur coordonnées d'un point de la droite
+          xomega := %4;
+          yomega := %5;
+          listxxi:=concat(listxi, xomega);
+          listyyi:=concat(listyi,yomega);
+          xmaxgraph  := max(concat(listxi , xomega));
+          xmingraph  := min(concat(listxi , xomega));
+          ymaxgraph  := max(concat(listyi , yomega));
+          ymingraph  := min(concat(listyi , yomega));
+        }
+    case 2:
+         {
+        // contraintes: 1
+        // contrainte sur la pente p de la droite
+            xmaxgraph  := max(listxi);
+            xmingraph  := min(listxi);
+            ymaxgraph  := max(listyi);
+            ymingraph  := min(listyi);
+            p1 := %6 ;
+            p2:=approx(mean(listyi)-p1*mean(listxi));
+            f(x):=p1*x+p2;
+            residuverticalmoyen:=approx((somme(abs(listyi-f(listxi))))/n);
+            residuorthogonalmoyen:=approx(residuverticalmoyen*cos(arctan(p1)));
+            longueurdroite:=sqrt((max(listxi)-min(listxi)).^2+(f(max(listxi))-f(min(listxi))).^2);
+            longueuri:=newList(n-1);
+            for(j:=0;j<=n-2;j:=j++)
+              {
+                longueuri[j]:=sqrt((listxi[j+1]-listxi[j]).^2+(listyi[j+1]-listyi[j]).^2);
+              }
+            longueurpolygone:=somme(longueuri); 
+            facteurqualite:=longueurdroite/longueurpolygone;
+          
+            return p1 + ";" + p2 + ";" + f(x) + ";" + residuverticalmoyen + ";" + residuorthogonalmoyen + ";" + longueurdroite  + ";" +
+            longueurpolygone + ";" + facteurqualite + ";" + min(listxi) + ";" + max(listxi) + ";" + xMoyen   + ";" + yMoyen + ";" +
+                       xmingraph     + ";" +  xmaxgraph+ ";" + ymingraph   + ";" + ymaxgraph  ;
+         } 
+    } 
+
+ 
+  v1:=approx((somme((listyi-yomega)*(listxi-xomega)))/(somme((listxi-xomega).^2)));
+  v2:=yomega-v1*xomega;
+  
+  h1:=approx(somme((listyi-yomega).^2)/(somme((listyi-yomega)*(listxi-xomega))));
+  h2:=yomega-h1*xomega;
+  denominateur:=((mean((listyi).^2)-mean((listxi).^2))+yomega.^2-xomega.^2-2*((yomega*mean(listyi)-(xomega*mean(listxi)))))
+ 
+  if(denominateur==0)
+   {
+     return "calculs pour la projection orthogonale impossibles" ;
+   }
+  else
+     { 
+      alpha:=0.5*arctan((-2*(mean(listxi.*listyi)-xomega*mean(listyi)-yomega*mean(listxi)+xomega*yomega))/denominateur);
+      d1:=somme((((listxi-mean(listxi))*cos(alpha))+(listyi-mean(listyi))*sin(alpha)).^2);
+      d2:=somme((((listxi-mean(listxi))*cos(alpha+pi/2))+(listyi-mean(listyi))*sin(alpha+pi/2)).^2);
+      if(d1<==d2)
+       {
+         teta:=alpha;
+       }
+      else
+         {
+           teta:=alpha+pi/2
+         }
+     o1:=-1/tan(teta)
+     o2:=yomega-o1*xomega; 
+   }
+
+  fv(x):=v1*x+v2;
+  fh(x):=h1*x+h2;
+  fo(x):=o1*x+o2; 
+  residumoyenorthoprojverti:=(somme(abs(listyi-(fv(listxi)))*cos(arctan(v1))))/n;
+  residumoyenorthoprojhoriz:=(somme(abs(listyi-(fh(listxi)))*cos(arctan(h1))))/n;
+  residumoyenorthoprojortho:=(somme(abs(listyi-(fo(listxi)))*cos(arctan(o1))))/n;
+  residucarremoyenorthoprojverti:=(somme(((listyi-(fv(listxi)))*cos(arctan(v1)))*((listyi-(fv(listxi)))*cos(arctan(v1)))))/n;
+  residucarremoyenorthoprojhoriz:=(somme(((listyi-(fh(listxi)))*cos(arctan(h1)))*((listyi-(fh(listxi)))*cos(arctan(h1)))))/n;
+  residucarremoyenorthoprojortho:=(somme(((listyi-(fo(listxi)))*cos(arctan(o1)))*((listyi-(fo(listxi)))*cos(arctan(o1)))))/n;
+
+  residucarremoyenortho:=min(residucarremoyenorthoprojverti,residucarremoyenorthoprojhoriz,residucarremoyenorthoprojortho);
+
+  residumoyenortho:=min(residumoyenorthoprojverti,residumoyenorthoprojhoriz,residumoyenorthoprojortho);
+ 
+// Test pour le conseil
+  if(residumoyenorthoprojverti==residumoyenortho)
+    {    
+      Conseil := "Choisir la droite de projection verticale: y=f(x)=v1x+v2";
+      f(x):=v1*x+v2;
+    }
+     if(residumoyenorthoprojhoriz==residumoyenortho)
+    {
+      Conseil := "Choisir la droite de projection horizontale: y=f(x)=h1x+h2";
+      f(x):=h1*x+h2;
+    }
+     if(residumoyenorthoprojortho==residumoyenortho)
+    {
+      Conseil := "Choisir la droite de projection orthogonale: y=f(x)=o1x+o2" ;
+      f(x):=o1*x+o2;          
+    }
+
+  f1:=unapply(diff(f(x),x,1),x)
+  longueurdroite:=approx(int(sqrt(1+(f1(x)).^2),x,min(listxxi),max(listxxi)));
+  longueuri:=newList(n-1);
+  for(j:=0;j<=n-2;j:=j++)   
+    {
+      longueuri[j]:=sqrt((listxi[j+1]-listxi[j]).^2+(listyi[j+1]-listyi[j]).^2);
+    }
+  longueurpolygone:=approx(somme(longueuri));
+
+//   --------------------------------------------------------------------------------------------------------
+
+return v1 + ";" + v2 + ";" + h1 + ";" + h2 + ";" + sqrt(min(v1/h1,h1/v1)) + ";" + o1 + ";" + o2+ ";" +
+        residucarremoyenorthoprojverti + ";" +  residucarremoyenorthoprojhoriz + ";" + residucarremoyenorthoprojortho + ";" + residumoyenorthoprojverti + ";" +
+        residumoyenorthoprojhoriz + ";" + residumoyenorthoprojortho + ";" + longueurdroite  + ";" + longueurpolygone + ";" + longueurdroite/longueurpolygone + ";" +
+        min(listxi) + ";" + max(listxi) + ";" +  xMoyen  + ";" + yMoyen    + ";" + Conseil + ";" + xmingraph  + ";" +  xmaxgraph+ ";" + ymingraph   + ";" + ymaxgraph  ;
+
+ }:;
+
+droitesmc() ;

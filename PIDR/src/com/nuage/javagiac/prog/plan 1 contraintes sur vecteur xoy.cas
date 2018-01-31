@@ -1,0 +1,67 @@
+plansmc1c_cas2():={
+  ClrIO;
+  cas_setup(0,0,0,1,0,1e-15,12,8,0);
+  purge(n,k);
+  listxi:=list[%1];
+  listyi:=list[%2];
+  listzi:=list[%3];  
+
+  listphi:=newList(6);
+  listphi:=list[x,y,y,z,z,x];  
+  n:=dim(listxi) ;
+
+  vdxoyx:=%4;
+  vdxoyy:=%5;
+  pentexoy:=%6;
+
+  DelVar(matlambda, eqcartplan);
+
+      listmatat1:=newList(n);
+      listmatat2:=newList(n);
+      listimage:=newList(n);
+      matat:=newMat(2,n);
+      mata:=newMat(n,2);
+      nvd1:=newMat(2,1);
+      nvdxoyx:=vdxoyx/sqrt(vdxoyx.^2+vdxoyy.^2);
+      nvdxoyy:=vdxoyy/sqrt(vdxoyx.^2+vdxoyy.^2); 
+      nvdxoy:=[[nvdxoyx][nvdxoyy]];      
+      delta0:=nvdxoyy;
+      delta1:=pentexoy;
+      delta11:=0;
+      delta12:=nvdxoyx;
+      listpermutationabscissespente:=listxi;
+      listpermutationordonneespente:=listyi;
+      for(jj:=0;jj<=n-1;jj:=jj++)
+        {
+      listmatat1[jj]:=list(delta0-delta11.*listyi[jj]);
+      listmatat2[jj]:=list(delta0.*listxi[jj]-delta12.*listyi[jj]);
+        }
+      listimage:=delta0.*listzi-pentexoy.*listyi;
+      matimage:=list2mat(listimage,1);
+      matat[0]:=listmatat1;
+      matat[1]:=listmatat2;
+      mata:=tran(matat);
+      matlambda:=newMat(3,1);
+      matlambda:=simult(matat*mata,matat*matimage);
+      matlambdalambda:=newMat(1,1);
+      matlambdalambda[0,0]:=(pentexoy-(matlambda[1,0])*nvdxoyx)/nvdxoyy;        
+      matlambda:=augment(matlambda,matlambdalambda);
+      eqcartplan:=-matlambda[1,0]*x-matlambda[2,0]*y+z-matlambda[0,0];
+
+
+      f(x,y):=matlambda[1,0]*x+matlambda[2,0]*y+matlambda[0,0];
+
+
+      listresorthoplan:=newList(n);
+      for(i:=0;i<=n-1;i:=i++)
+        {                     
+          listresorthoplan[i]:=approx(abs(((-matlambda[1,0])*listxi[i]+(-matlambda[2,0])*listyi[i]+listzi[i]+(-matlambda[0,0])))/sqrt((-matlambda[1,0]).^2+(-matlambda[2,0]).^2+1));        
+        } 
+
+      resorthomplan:=(1/n)*sum(listresorthoplan);
+
+      return f(x,y) + ";" + approx(eqcartplan) + ";" + approx(resorthomplan);    
+
+}:;
+
+plansmc1c_cas2();

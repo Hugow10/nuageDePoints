@@ -1,0 +1,61 @@
+plansmc1c_cas4():={
+  ClrIO;
+  purge(n,k);
+  listxi:=list[%1];
+  listyi:=list[%2];
+  listzi:=list[%3];  
+
+  listphi:=newList(6);
+  listphi:=list[x,y,y,z,z,x];
+  n:=dim(listxi) ;  
+ 
+  vdyozy:=%4;
+  vdyozz:=%5;
+  penteyoz:=%6;
+
+      listmatat1:=newList(n);
+      listmatat2:=newList(n);
+      listimage:=newList(n);
+      matat:=newMat(2,n);
+      mata:=newMat(n,2);
+      nvd1:=newMat(2,1);
+      nvdyozy:=vdyozy/sqrt(vdyozy.^2+vdyozz.^2);
+      nvdyozz:=vdyozz/sqrt(vdyozy.^2+vdyozz.^2); 
+      nvdxoy:=[[nvyozy][nvdyozz]];      
+      delta0:=nvdyozz;
+      delta1:=penteyoz;
+      delta11:=0;
+      delta12:=nvdyozy;
+      listpermutationabscissespente:=listyi;
+      listpermutationordonneespente:=listzi;
+      for(jj:=0;jj<=n-1;jj:=jj++)
+        {
+      listmatat1[jj]:=list(delta0-delta11.*listzi[jj]);
+      listmatat2[jj]:=list(delta0.*listyi[jj]-delta12.*listzi[jj]);
+        }
+      listimage:=delta0.*listxi-penteyoz.*listzi;
+      matimage:=list2mat(listimage,1);
+      matat[0]:=listmatat1;
+      matat[1]:=listmatat2;
+      mata:=tran(matat);
+      matlambda:=newMat(3,1);
+      matlambda:=simult(matat*mata,matat*matimage);
+      matlambdalambda:=newMat(1,1);
+      matlambdalambda[0,0]:=(penteyoz-(matlambda[1,0])*nvdyozy)/nvdyozz;        
+      matlambda:=augment(matlambda,matlambdalambda);
+      eqcartplan:=-matlambda[1,0]*y-matlambda[2,0]*z+x-matlambda[0,0];
+      f(x,y):=(1/matlambda[2,0])*x-(matlambda[1,0]/matlambda[2,0])*y-(matlambda[0,0]/matlambda[2,0]);
+      listresorthoplan:=newList(n);
+      f(x,y):=approx(-matlambda[1,0]/(matlambda[2,0])*y+(1/matlambda[2,0])*x-(matlambda[0,0]/matlambda[2,0]));
+
+      for(i:=0;i<=n-1;i:=i++)
+        {                     
+          listresorthoplan[i]:=approx(abs(((-matlambda[1,0])*listyi[i]+(-matlambda[2,0])*listzi[i]+
+          listxi[i]+(-matlambda[0,0])))/sqrt((-matlambda[1,0]).^2+(-matlambda[2,0]).^2+1));        
+        } 
+       resorthomplan:=(1/n)*sum(listresorthoplan);
+
+    f(x,y) + ";" + approx(eqcartplan) + ";" + approx(resorthomplan);   
+}:;
+
+plansmc1c_cas4();

@@ -1,0 +1,64 @@
+plansmc1c_cas3():={
+      ClrIO;
+      purge(n,k);
+      listxi:=list[%1];
+      listyi:=list[%2];
+      listzi:=list[%3];  
+
+      listphi:=newList(6);
+      listphi:=list[x,y,y,z,z,x];  
+      n:=dim(listxi) ;
+  
+      vdzoxz:=%4;
+      vdzoxx:=%5;
+      pentezox:=%6;
+
+
+      listmatat1:=newList(n);
+      listmatat2:=newList(n);
+      listimage:=newList(n);
+      matat:=newMat(2,n);
+      mata:=newMat(n,2);
+      nvd1:=newMat(2,1);
+      nvdzoxz:=vdzoxz/sqrt(vdzoxz.^2+vdzoxx.^2);
+      nvdzoxx:=vdzoxx/sqrt(vdzoxz.^2+vdzoxx.^2); 
+      nvdzox:=[[nvdzoxz][nvdzoxx]];      
+      delta0:=nvdzoxx;
+      delta1:=pentezox;
+      delta11:=0;
+      delta12:=nvdzoxz;
+      listpermutationabscissespente:=listzi;
+      listpermutationordonneespente:=listxi;
+      for(jj:=0;jj<=n-1;jj:=jj++)
+        {
+      listmatat1[jj]:=list(delta0-delta11.*listxi[jj]);
+      listmatat2[jj]:=list(delta0.*listzi[jj]-delta12.*listxi[jj]);
+        }
+      listimage:=delta0.*listyi-pentezox.*listxi;
+      matimage:=list2mat(listimage,1);
+      matat[0]:=listmatat1;
+      matat[1]:=listmatat2;
+      mata:=tran(matat);
+      matlambda:=newMat(3,1);
+      matlambda:=approx(simult(matat*mata,matat*matimage));
+      matlambdalambda:=newMat(1,1);  
+      matlambdalambda[0,0]:=(pentezox-(matlambda[1,0])*nvdzoxz)/nvdzoxx;        
+      matlambda:=augment(matlambda,matlambdalambda);
+      eqcartplan:=approx(-matlambda[1,0]*z-matlambda[2,0]*x+y-matlambda[0,0]);
+
+
+     f(x,y):=approx(-matlambda[2,0]/(matlambda[1,0])*x+(1/matlambda[1,0])*y-(matlambda[0,0]/matlambda[1,0]));
+
+
+      listresorthoplan:=newList(n);
+      for(i:=0;i<=n-1;i:=i++)
+        {                     
+          listresorthoplan[i]:=abs(((-matlambda[1,0])*listzi[i]+(-matlambda[2,0])*listxi[i]+listyi[i]+(-matlambda[0,0])))/sqrt((-matlambda[1,0]).^2+(-matlambda[2,0]).^2+1);        
+        } 
+       resorthomplan:=(1/n)*sum(listresorthoplan);
+      return f(x,y) + ";" + approx(eqcartplan) + ";" + approx(resorthomplan);    
+
+
+}:;
+
+plansmc1c_cas3();

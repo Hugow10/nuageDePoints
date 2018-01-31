@@ -1,0 +1,215 @@
+plansmc0c():={
+ ClrIO;
+     purge(n,k);
+cas_setup(0,0,0,1,0,1e-15,12,8,0);
+     listxi:=list[%1];
+     listyi:=list[%2];
+     listzi:=list[%3];
+ 
+     listphi:=newList(6);
+     listphi:=list[x,y,y,z,z,x]; 
+     listxomega:=list[];
+     listyomega:=list[];
+     listzomega:=list[];
+     n:=dim(listxi);
+     listun:=newList(n);
+     Fill(1,listun);
+     listimage:=newList(n);
+     listpermutationabscisses:=newList(n);
+     listpermutationordonnees:=newList(n);
+     listpermutationcotes:=newList(n);
+     listfeqplans:=newList(3);
+     listlambdalambda:=newList(0);
+     mata:=newMat(n,3);
+     matat:=newMat(3,n);
+     matlambda:=newMat(3,1);
+     DelVar( contrainte )
+     jj:=0;
+     xw:=mean(listxi);listxomega[0]:=xw;
+     yw:=mean(listyi);listyomega[0]:=yw;
+     zw:=mean(listzi);listzomega[0]:=zw;
+     for(j:=0;j<=2;j:=j++)
+      {
+         if(j==0)
+          { 
+            listpermutationabscisses:=listxi;
+            listpermutationordonnees:=listyi;
+            listpermutationcotes:=listzi;
+          }
+         if(j==1)
+          { 
+            listpermutationabscisses:=listyi;
+            listpermutationordonnees:=listzi;
+            listpermutationcotes:=listxi;
+          }
+         if(j==2)
+          { 
+            listpermutationabscisses:=listzi;
+            listpermutationordonnees:=listxi;
+            listpermutationcotes:=listyi;
+          }
+         listimage:=listpermutationcotes;
+         matimage:=list2mat(listimage,1);
+         matat[0]:=listpermutationabscisses;
+         matat[1]:=listpermutationordonnees;
+         matat[2]:=listun;  
+         mata:=transpose(matat);
+         matlambda:=simult(matat*mata,matat*matimage);
+         listlambda:=newList(3);
+         listlambda:=mat2list(matlambda);
+         listlambdalambda:=concat(listlambdalambda,listlambda);
+         f(absc,ordo):=listlambda[0]*listphi[j+jj]+listlambda[1]*listphi[j+jj+1]+listlambda[2];
+         jj:=jj+1;
+         listfeqplans[j]:=f(absc,ordo);
+         listcoeff:=newList(3);
+         listcoeff[j]:=-listlambda/listlambda[j];
+         if(j==0)
+           {
+             fz(x,y):=listlambda[0]*x+listlambda[1]*y+listlambda[2];
+             eqcartplanprojz:=unapply(fz(x,y)-z,x,y,z);
+             listresorthofz:=newList(n);
+             listresorthofz:=(abs(zip(fz,listxi,listyi)-listzi))/sqrt(listlambda[0].^2+listlambda[1].^2+1);
+             resorthomfz:=((1/n)*sum((abs(listresorthofz))));
+           }
+         if(j==1)
+          {
+             fx(y,z):=listlambda[0]*y+listlambda[1]*z+listlambda[2];
+             eqcartplanprojx:=unapply(fx(y,z)-x,x,y,z);
+             listresorthofx:=newList(n);
+             listresorthofx:=(abs(zip(fx,listyi,listzi)-listxi))/sqrt(listlambda[0].^2+listlambda[1].^2+1);
+             resorthomfx:=((1/n)*sum((abs(listresorthofx))));
+             fx(x,y):=(1/listlambda[1])*x-(listlambda[0]/listlambda[1])*y-(listlambda[2]/listlambda[1]);
+          }
+         if(j==2)
+          {
+             fy(z,x):=listlambda[0]*z+listlambda[1]*x+listlambda[2];
+             eqcartplanprojy:=unapply(fy(z,x)-y,x,y,z);
+             listresorthofy:=newList(n);
+             listresorthofy:=(abs(zip(fy,listzi,listxi)-listyi))/sqrt(listlambda[0].^2+listlambda[1].^2+1);
+             resorthomfy:=((1/n)*sum((abs(listresorthofy))));
+             fy(x,y):=(-listlambda[1]/listlambda[0])*x+(1/listlambda[0])*y-(listlambda[2]/listlambda[0]);
+          }
+
+    }
+     DelVar(a,xm,ym,zm,x2m,y2m,z2m,xym,yzm,xzm,aa1,aa2,aa3,bb1,bb2,bb3,cc1,cc2,cc3,fortho(x,y),fx(x,y),fy(x,y),fz(x,y),f(x,y));
+    xm:=mean(listxi-mean(listxi));ym:=mean(listyi-mean(listyi));zm:=mean(listzi-mean(listzi));x2m:=mean((listxi-mean(listxi)).^2);y2m:=mean((listyi-mean(listyi)).^2);
+    z2m:=mean((listzi-mean(listzi)).^2);xym:=mean((listxi-mean(listxi)).*(listyi-mean(listyi)));yzm:=mean((listyi-mean(listyi)).*(listzi-mean(listzi)));
+    xzm:=mean((listxi-mean(listxi)).*((listzi-mean(listzi))));  
+        coeff3:=-xym*xzm.^2+x2m*xzm*yzm-xzm*y2m*yzm+xym*yzm.^2;
+        coeff2:=x2m*xym*xzm+xym*xzm*y2m-(x2m.^2)*yzm-2*(xym.^2)*yzm+xzm.^2*yzm+x2m*y2m*yzm+yzm.^3-2*xym*xzm*z2m+x2m*yzm*z2m-y2m*yzm*z2m;
+        coeff1:=xym.^3+xym*xzm.^2-x2m*xym*y2m-2*x2m*xzm*yzm+xzm*y2m*yzm-2*xym*(yzm).^2+x2m*xym*z2m+xym*y2m*z2m+xzm*yzm*z2m-xym*(z2m).^2;
+        coeff0:=xym*xzm*z2m-xym*xzm*y2m+(xym).^2*yzm-xzm.^2*yzm;
+       delta3:=(coeff2*coeff1).^2+18*coeff3*coeff2*coeff1*coeff0-27*(coeff3*coeff0).^2-2*coeff3*coeff1.^3-4*coeff2.^3*coeff0;
+    if(xym==0 or (xym*xzm+yzm*(y2m-x2m))==0)
+     {
+       return( "Calculs impossibles avec ce nuage de points." );
+     }
+    listsolutions:=newList(0);
+    listsolutions:=zeros((-xym*xzm.^2+x2m*xzm*yzm-xzm*y2m*yzm+xym*yzm.^2)*a.^3+(x2m*xym*xzm+xym*xzm*y2m-(x2m.^2)*yzm-2*(xym.^2)*yzm+xzm.^2*yzm+x2m*y2m*yzm+yzm.^3-2*xym*xzm*z2m+x2m*yzm*z2m
+          -y2m*yzm*z2m)*a.^2+(xym.^3+xym*xzm.^2-x2m*xym*y2m-2*x2m*xzm*yzm+xzm*y2m*yzm-2*xym*(yzm).^2+x2m*xym*z2m+xym*y2m*z2m+xzm*yzm*z2m-xym*(z2m).^2)*a+(xym*xzm*z2m-xym*xzm*y2m+(xym).^2*yzm
+            -xzm.^2*yzm),a);
+    if(dim(listsolutions==1))
+     {
+       aa1:=listsolutions[0];
+       bb1:=(aa1*x2m+(1-aa1.^2)*xzm-aa1*z2m)/(aa1*yzm-xym);
+       cc1:=aa1*mean(listxi)+bb1*mean(listyi)+mean(listzi);
+       fortho(x,y):=approx(-aa1*x-bb1*y+cc1);
+       eqcartplanprojorth:=-aa1*x-bb1*y+-z+(aa1*mean(listxi)+bb1*mean(listyi)+mean(listzi));        
+     }
+     if(dim(listsolutions==2))
+     {
+       aa1:=listsolutions[0];
+       bb1:=(aa1*x2m+(1-aa1.^2)*xzm-aa1*z2m)/(aa1*yzm-xym);
+       cc1:=-(approx((aa1*mean(listxi)+ bb1*mean(listyi)+ mean(listzi))));
+       fortho1(x,y):=approx(-aa1*x-bb1*y-cc1);      
+       eqcartplanprojorth1(x,y,z):=aa1*x+bb1*y+z+cc1; 
+       aa2:=listsolutions[1];
+       bb2:=(aa2*x2m+(1-aa2.^2)*xzm-aa2*z2m)/(aa2*yzm-xym);
+       cc2:=-(approx((aa2*mean(listxi)+ bb2*mean(listyi)+ mean(listzi))));
+       fortho2(x,y):=-aa2*x-bb2*y-cc2;      
+       eqcartplanprojorth2(x,y,z):=aa2*x+bb2*y+z+cc2;                              
+     }
+    if(dim(listsolutions==3))
+     {
+       aa1:=listsolutions[0];
+       bb1:=(aa1*x2m+(1-aa1.^2)*xzm-aa1*z2m)/(aa1*yzm-xym);
+       cc1:=-(approx((aa1*mean(listxi)+ bb1*mean(listyi)+ mean(listzi))));
+       fortho1(x,y):=approx(-aa1*x-bb1*y-cc1);      
+       eqcartplanprojortho1(x,y,z):=aa1*x+bb1*y+z+cc1; 
+       aa2:=listsolutions[1];
+       bb2:=(aa2*x2m+(1-aa2.^2)*xzm-aa2*z2m)/(aa2*yzm-xym);
+       cc2:=-(approx((aa2*mean(listxi)+ bb2*mean(listyi)+ mean(listzi))));
+       fortho2(x,y):=-aa2*x-bb2*y-cc2;      
+       eqcartplanprojortho2(x,y,z):=aa2*x+bb2*y+z+cc2;
+       aa3:=listsolutions[2];
+       bb3:=(aa3*x2m+(1-aa3.^2)*xzm-aa3*z2m)/(aa3*yzm-xym);
+       cc3:=-(approx((aa3*mean(listxi)+ bb3*mean(listyi)+ mean(listzi))));
+       fortho3(x,y):=-aa3*x-bb3*y-cc3;      
+       eqcartplanprojortho3(x,y,z):=aa3*x+bb3*y+z+cc3;                             
+     }     
+       listorthochoix:=newList(0);
+       listres2ortho1:=newList(n);
+       listres2ortho2:=newList(n);
+       listres2ortho3:=newList(n);
+       listresortho1:=newList(n);
+       listresortho2:=newList(n);
+       listresortho3:=newList(n);
+       res2orthom1:=mean(approx((zip(-fortho1,listxi,listyi)+listzi)).^2/(aa1.^2+bb1.^2+1));
+       res2orthom2:=mean(approx((zip(-fortho2,listxi,listyi)+listzi)).^2/(aa2.^2+bb2.^2+1));
+       res2orthom3:=mean(approx((zip(-fortho3,listxi,listyi)+listzi)).^2/(aa3.^2+bb3.^2+1));
+       resorthom1:=mean(approx(((abs(zip(-fortho1,listxi,listyi)+listzi)))/sqrt(aa1.^2+bb1.^2+1)));
+       resorthom2:=mean(approx(((abs(zip(-fortho2,listxi,listyi)+listzi)))/sqrt(aa2.^2+bb2.^2+1)));
+       resorthom3:=mean(approx(((abs(zip(-fortho3,listxi,listyi)+listzi)))/sqrt(aa3.^2+bb3.^2+1)));
+       listorthochoix:=[res2orthom1,res2orthom2,res2orthom3];
+       choix:=min(listorthochoix);
+       if(res2orthom1==choix)
+        {
+          fortho:=unapply(fortho1(x,y),x,y);
+          eqcartplanprojortho:=unapply(eqcartplanprojortho1(x,y,z),x,y,z);
+          resorthomortho:=approx(resorthom1); 
+        }
+       if(res2orthom2==choix)
+        {
+          fortho:=unapply(fortho2(x,y),x,y);
+          eqcartplanprojortho:=unapply(eqcartplanprojortho2(x,y,z),x,y,z);
+          resorthomortho:=approx(resorthom2);
+        }
+       if(res2orthom3==choix)
+        {
+          fortho:=unapply(fortho3(x,y),x,y);
+          eqcartplanprojortho:=unapply(eqcartplanprojortho3(x,y,z),x,y,z);
+          resorthomortho:=approx(resorthom3);
+        }
+       listchoixchoix:=newList(0);
+       listchoixchoix:=[resorthomfx,resorthomfy,resorthomfz,resorthomortho];
+       choixchoix:=min(listchoixchoix);
+       if(resorthomfz==choixchoix)
+        {
+          resorthomfxy:=resorthomfz;
+          f:=unapply(fz(x,y),x,y);
+        }
+       if(resorthomfx==choixchoix)
+        {
+          resorthomfxy:=resorthomfx;
+          f:=unapply(fx(x,y),x,y);
+        }
+       if(resorthomfy==choixchoix)
+        {
+          resorthomfxy:=resorthomfy;
+          f:=unapply(fy(x,y),x,y);
+        }
+       if(resorthomortho==choixchoix)
+        {
+          resorthomfxy:=resorthomortho;
+          f:=unapply(fortho(x,y),x,y);
+        }  
+     
+       Return approx(listfeqplans[0]) + ";" + approx(listfeqplans[1]) + ";" +  approx(listfeqplans[2]) + ";" + approx(eqcartplanprojz(x,y,z)) + ";" +
+       approx(eqcartplanprojx(x,y,z)) + ";" + approx(eqcartplanprojy(x,y,z)) + ";" + approx(eqcartplanprojortho(x,y,z))  + ";" +
+       approx(fz(x,y))  + ";" +  approx(fx(x,y)) + ";" + approx(fy(x,y)) + ";" +
+       approx(fortho(x,y)) + ";" + approx(resorthomfz)  + ";" +  approx(resorthomfx) + ";" +
+       approx(resorthomfy) + ";" +  approx(resorthomortho) + ";" + approx(f(x,y)) + ";" +
+       approx(resorthomfxy) ;
+ }:;
+
+plansmc0c() ;

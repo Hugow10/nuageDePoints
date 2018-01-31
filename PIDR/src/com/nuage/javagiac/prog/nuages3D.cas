@@ -1,0 +1,430 @@
+nuages3d():={
+cas_setup(0,0,0,1,0,1e-15,12,8,0);
+// Passage de parametres de windev à giac
+  listxi:=list[%1];
+  listyi:=list[%2];
+  listzi:=list[%3];
+  listphi:=list[%4];
+  xMoyen := approx(moyenne(listxi)) ;
+  yMoyen := approx(moyenne(listyi)) ;
+  zMoyen := approx(moyenne(listzi)) ;
+  xMax := max(listxi);
+  xMin := min(listxi);
+  yMax := max(listyi);
+  yMin := min(listyi);
+  zMax := max(listzi);
+  zMin := min(listzi);
+
+  listxomega:=list[%5];
+  listyomega:=list[%6];
+  listzomega:=list[%7];
+  listcontraintes:=list[%7];
+  listordrederivation:=list[%8];
+  listux:=list[%9];
+  listuy:=list[%10];
+
+
+/////////////////////////////////////////////////////////////// 
+
+  n:= dim(listxi);
+  p:= dim(listphi);
+  k:= dim(listcontraintes);
+
+  matlambdaj:=newMat(p,1);
+  matzi:=list2mat(listzi,1);
+  matphi:= newMat(p,1);
+  matphi:= list2mat((listphi,1));
+  listuux:= newList(k);
+  listuuy:= newList(k);
+  matphik:=newMat(k,1);
+  matphik:=subMat(matphi,p-k,0,p,0);
+  matphi1k:=subMat(matphi,0,0,p-k-1,0);
+  listphik:=mat2list(matphik);
+  listphi1k:=mat2list(matphi1k);
+
+  for(j:=0;j<=k-1;j++)
+    {
+      if (listordrederivation[j]!=0)
+      {
+        unitaire:=sqrt(listux[j].^2+listuy[j].^2);
+        listuux[j]:=listux[j]/unitaire;
+        listuuy[j]:=listuy[j]/unitaire;
+      }
+      else
+      {
+        listuux[j]:=0.5;
+        listuuy[j]:=0.5;
+      }
+    }       
+label debut;                         
+    if(k==0)
+     {
+       goto k0;
+     }
+     if(k==1)
+      {
+        goto k1
+      }
+    matcont:=list2mat(listcontraintes,1);
+    matphi:=list2mat(listphi,1);
+    matphik:=subMat(matphi,p-k,0,p-1,0); 
+    matphi1k:=subMat(matphi,0,0,p-k-1,0);
+    matdelta0:=newMat(k,k);
+    matdelta0t:=newMat(k,k);
+    matdeltal:=newMat(k,k);
+    matdeltalt:=newMat(k,k);  
+    matdelta:=newMat(k,p);
+    matdeltat:=newMat(p,k);
+    listdeltaxy:=newList(k);
+
+    for(j:=0;j<=k-1; j++)
+      {
+        c:=listordrederivation[j];
+        uux:=listuux[j];
+        uuy:=listuuy[j];
+        listdeltaxy:=somme(comb(c,jj)*uux.^jj*uuy.^(c-jj)*diff(diff(listphi,x,jj),y,c-jj),jj,0,c);       
+        matdelta[j]:=subst(listdeltaxy,(x=listxomega[j],y=listyomega[j]));
+      }  
+
+      matdelta0:=subMat(matdelta,0,p-k,k-1,p-1);
+      matdelta0t:=transpose(matdelta0);
+      delta0:=approx(det(matdelta0));   
+      
+    if(delta0==0)
+     {
+       return "calculs impossibles. Modifiez l'ordre des fonctions d'essai, en commençant du côté droit, par exemple." ;
+     }
+
+    matdeltat:=transpose(matdelta);       
+    matdeltalt:=matdelta0t;
+    matdeltall:=newMat(k,1);
+    matdeltallj:=newMat(k,p-k);
+    matdeltaltj:=newMat(k,k);
+    matdeltalj:=newMat(k,k);
+    matdeltalt[0]:=listcontraintes;
+    matdeltal:=transpose(matdeltalt);
+    matdeltaltj:=matdeltalt;
+    detmatdeltal:=approx(det(matdeltalt));
+    matdeltall[0,0]:=detmatdeltal;
+
+    for(j:=0;j<=p-k-1; j++)
+      {
+        matdeltatj:=matdeltat;
+        matdeltaltj[0]:=matdeltat[j];
+        matdeltalj:=transpose(matdeltaltj);
+        detmatdeltallj:=approx(det(matdeltaltj));
+        matdeltallj[0,j]:=detmatdeltallj;
+      }
+      for(l:=1;l<=k-1;l:=l++)
+        {
+           matdeltalt[l]:=col(matdelta0,[l-1]);
+           detmatdeltalt:=approx(det(matdeltalt));
+           matdeltall[l,0]:=detmatdeltalt;
+
+           for(jj:=0;jj<=p-k-1; jj++)
+             {
+               matdeltaltj:=matdeltalt;
+               matdeltaltj[0]:=matdeltat[jj];
+               matdeltalj:=transpose(matdeltaltj);
+               detmatdeltaltj:=approx(det(matdeltaltj));
+               matdeltallj[l,jj]:=detmatdeltaltj;             
+             }
+        }
+ 
+    listsomme:=newList(0);
+    listdeltall:=newList(k);
+    listdeltall:=mat2list(matdeltall);
+    listsommesomme:=(somme(((-1).^l)*listdeltall[l]*listphik[l],l,0,k-1));   
+    h(x,y):=listsommesomme;
+    listsomme:=approx(zip(h,listxi,listyi));     
+    listimage:=newList(n);
+    listimage:=delta0*listzi-listsomme;
+    matimage:=newMat(n,1);
+    matimage:=list2mat(listimage,1);
+    listphi1kt:=newlist(p-k);
+    mata:=newMat(n,p-k);
+    matat:=newMat(p-k,n);
+    matlambda:=newMat(p,1);
+
+    for(j:=0;j<=p-k-1;j++)   
+      {
+        listmata:=newList(n);
+        listmataxy:=list(delta0*listphi1k[j]-somme(((-1).^(l))*matdeltallj[l,j]*listphik[l],l,0,k-1));
+        g(x,y):=listmataxy;
+        listmata:=approx(zip(g,listxi,listyi));
+        matat[j]:=listmata;
+      }
+
+    mata:=transpose(matat);
+    matlambda:=simult(transpose(mata)*mata,transpose(mata)*matimage);
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);
+    listsigma:=newList(k);
+  
+    for(jj:=0;jj<=k-1;jj++)
+      {
+        listsigma[jj]:=somme(matlambda[j,0]*matdelta[jj,j],j,0,p-k-1);
+      }
+
+    matdeltalambdal:=newMat(k,k);
+    matdeltalambdalt:=newMat(k,k);
+    matdeltalambdalambdalt:=newMat(k,k);
+    matdeltalambdall:=newMat(k,1);
+    matlambdalambda:=newMat(k,1); 
+    matdeltalambdalt:=transpose(matdelta0);
+    listdeltalambdal:=newList(k);
+    listcol:=newList(k);
+    listdeltalambdall:=newList(k);
+    listlambdalambda:=newList(k);
+    matdeltalambdalt[0]:=listsigma;
+    matdeltalambdalambdalt:=matdeltalambdalt;
+    matdeltalambdal:=transpose(matdeltalambdalt);
+    detmatdeltalambdal:=approx(det(matdeltalambdalt));
+    matdeltalambdall[0]:=detmatdeltalambdal;
+    matdeltalambdalambdalt:=matdeltalambdalt;
+
+    for(l:=1;l<=k-1;l++)
+      {
+        matcol:=col(matdelta0,[l-1]);
+        listcol:=mat2list(matcol);
+        matdeltalambdalt[l]:=listcol;
+        matdeltalambdal:=transpose(matdeltalambdalt);
+        detmatdeltalambdal:=approx(det(matdeltalambdalt));
+        matdeltalambdall[l]:=detmatdeltalambdal;
+        matdeltalambdalt[l]:=matdelta0t[l-1];                             
+      }
+
+    listdeltalambdall:=mat2list(matdeltalambdall); 
+
+    for(j:=0;j<=k-1;j++)
+      {
+        listlambdalambda[j]:=(((-1)^(j))*(listdeltall[j]-listdeltalambdall[j]))/delta0;
+        listlambda[p-k+j]:=listlambdalambda[j];
+      }
+    
+     matlambda:=list2mat(listlambda,1);
+     listfxy:=newList(p);
+     listfxy:=listlambda*listphi;
+     listresidus:=newList(n);
+     listcarresresdus:=newList(n);
+     f(x,y):=somme(listfxy);
+     listresidus:=approx(abs(listzi-(zip(f,listxi,listyi))));
+     sommeresidus:=somme(listresidus);
+     listcarresresidus:=approx(((listzi-(zip(f,listxi,listyi)))*(listzi-(zip(f,listxi,listyi)))));
+     sommecarresresidus:=somme(listcarresresidus);
+     residumoyen:=sommeresidus/n;
+     residucarremoyen:=sommecarresresidus/n; 
+     for(j:=0 ; j<=k-1; j++)
+        {
+           if (listordrederivation[j] > 0)
+            {
+               listcontraintes[j] := f(listxomega[j] ,listyomega[j])
+            }
+        }
+     listxetendue:=newList(0);
+     listyetendue:=newList(0);
+     listzetendue:=newList(0);
+     listxetendue:=concat(listxi,listxomega);
+     listyetendue:=concat(listyi,listyomega);
+     listzetendue:=concat(listzi,listzomega);
+     xgraphmin:=min(listxetendue);
+     xgraphmax:=max(listxetendue);
+     ygraphmin:=min(listyetendue);
+     ygraphmax:=max(listyetendue);
+     zgraphmin:=min(listzetendue);
+     zgraphmax:=max(listzetendue);
+
+     // Recalcul les points contraints en tenant compte de l'ordre de derivation
+     //for(j:=0 ; j<=k-1; j++)
+     //{
+      //if (listordrederivation[j] > 0) then
+     //{listcontraintes[j] := f(listxomega[j] ,listyomega[j]) }
+      //else   
+     //{listcontraintes[j] := 0}
+     //};
+
+     goto affichages;  
+
+label k0;
+     mata:=newMat(n,p);
+     matat:=newMat(p,n);
+     listmatamatat:=newList(n);
+     listimage:=listzi;
+     matimage:=list2mat(listimage,1);
+
+     for(j:=0;j<=p-1; j++)
+     {
+       phi(x,y):=listphi[j];
+       listmatamatat:=approx(zip(phi,listxi,listyi));
+       matat[j]:=listmatamatat;
+     }
+
+    mata:=transpose(matat);
+    matlambda:=simult(transpose(mata)*mata,transpose(mata)*matimage);
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);  
+    listfxy:=newList(p);
+    listfxy:=listlambda.*listphi;
+    listresidus:=newList(n);
+    listcarresresidus:=newList(n);
+    f(x,y):=somme(listfxy);  
+    listresidus:=approx(abs(listzi-(zip(f,listxi,listyi))));
+    sommeresidus:=somme(listresidus);
+    residumoyen:=sommeresidus/n;
+    listcarresresidus:=approx(((listzi-(zip(f,listxi,listyi)))*(listzi-(zip(f,listxi,listyi)))));
+    sommecarresresidus:=somme(listcarresresidus);
+    residucarremoyen:=sommecarresresidus/n;
+    listxetendue:=newList(0);
+    listyetendue:=newList(0);
+    listzetendue:=newList(0);
+    xgraphmin:=min(listxi);
+    xgraphmax:=max(listxi);
+    ygraphmin:=min(listyi);
+    ygraphmax:=max(listyi);
+    zgraphmin:=min(listzi);
+    zgraphmax:=max(listzi);
+    goto zerocontrainte
+label k1;
+    listderivexy:=newlist[k];
+    listdelta:=newList(p);
+    matdelta:=newMat(1,p);
+    listuux:=newList(1),
+    listuuy:=newList(1);
+   
+      if (listordrederivation[0]!=0)
+      {
+        unitaire:=sqrt(listux[0].^2+listuy[0].^2);
+        listuux[0]:=listux[0]/unitaire;
+        listuuy[0]:=listuy[0]/unitaire;
+      }
+      else
+      {
+        listuux[0]:=0.5;
+        listuuy[0]:=0.5;
+      }       
+     c:=listordrederivation[0];
+     uux:=listuux[0];
+     uuy:=listuuy[0];
+     listdeltadelta0:=newList(1);
+     listdeltadelta0:=somme(comb(c,jj)*uux^jj*uuy^(c-jj)*diff(diff(listphi,x,jj),y,c-jj),jj,0,c);
+     listderivexy[0]:=listdeltadelta0;
+     xw:=listxomega[0];
+     yw:=listyomega[0];
+     matdelta[0]:=subst(listdeltadelta0,(x=listxomega[0],y=listyomega[0]));
+    listdelta:=matdelta[0];
+    listdelta:=mat2list(matdelta);   
+    matdelta0:=subMat(matdelta,0,p-1,0,p-1);
+    delta0:=approx((matdelta0[0])[0]);
+
+    if(delta0==0)
+     {
+       return "calculs impossibles. Modifiez l'ordre des fonctions d'essai, par la droite, par exemple." ;
+     }  
+
+    listimage:=newList(n);
+    phip(x,y):=list(listphi[p-1]);
+    listimage:=approx(delta0*listzi-listcontraintes[0]*zip(phip,listxi,listyi));
+    matimage:=newMat(n,1);
+    matimage:=list2mat(listimage,1);
+    matlambda:=newMat(p,1);
+    mata:=newMat(n,p-k);
+    matat:=newMat(p-k,n);
+
+
+    for(j:=0;j<=p-2;j++)
+      {
+        listmatamata:=delta0*listphi[j]-listdelta[j]*listphi[p-1];
+        g(x,y):=listmatamata;
+        matat[j]:=approx(zip(g,listxi,listyi));
+      }
+
+
+    mata:=transpose(matat); 
+    matlambda:=simult(matat*mata,matat*matimage);
+    listlambda:=newList(p);
+    listlambda:=mat2list(matlambda);
+    listsigma:=newList(k);
+ 
+   for(jj:=0;jj<=k-1;jj++)
+      {
+        listsigma[jj]:=approx(somme(matlambda[j,0]*matdelta[jj,j],j,0,p-k-1));
+      }
+
+    listlambda[p-1]:=approx((listcontraintes[0]-listsigma[0])/listdelta[p-1]); 
+    listfxy:=newList(p);
+    listfxy:=listlambda.*listphi;
+    listresidus:=newList(n);
+    listcarresresidus:=newList(n);
+    f(x,y):=somme(listfxy);  
+    listresidus:=approx(abs(listzi-(zip(f,listxi,listyi))));
+    sommeresidus:=somme(listresidus);
+    listcarresresidus:=approx(((listzi-(zip(f,listxi,listyi)))*(listzi-(zip(f,listxi,listyi)))));
+    sommecarresresidus:=somme(listcarresresidus);  
+    residumoyen:=sommeresidus/n;
+    residucarremoyen:=sommecarresresidus/n;
+
+    // Recalcul les points contraints en tenant compte de l'ordre de derivation
+     for(j:=0 ; j<=k-1; j++)
+       {
+          if (listordrederivation[j] > 0) then
+          {
+             listcontraintes[j] := f(listxomega[j] ,listyomega[j]);
+          }   
+        };
+     listxetendue:=newList(0);
+     listyetendue:=newList(0);
+     listzetendue:=newList(0);
+     listxetendue:=concat(listxi,listxomega);
+     listyetendue:=concat(listyi,listyomega);
+     listzetendue:=concat(listzi,listzomega);
+     xgraphmin:=min(listxetendue);
+     xgraphmax:=max(listxetendue);
+     ygraphmin:=min(listyetendue);
+     ygraphmax:=max(listyetendue);
+     zgraphmin:=min(listzetendue);
+     zgraphmax:=max(listzetendue);
+label affichages;
+     // graphisme
+     listxomegaomega:=newList(0);
+     listyomegaomega:=newList(0);
+     listcontraintescontraintes:=newList(0);
+     for(jj:=0;jj<=k-1;jj++)
+       {
+          if (listordrederivation[jj]==0)
+          {
+             listxomegaomega[jj]:=listxomega[jj];
+             listyomegaomega[jj]:=listyomega[jj];
+             listcontraintescontraintes[jj]:=listcontraintes[jj];        
+          }
+           
+         
+      }  
+
+//return listxomegaomega, listyomegaomega, listcontraintescontraintes;
+    
+    //graphlistxi := concat(listxi, listxomegaomega) ;
+    //graphlistyi := concat(listyi, listyomegaomega) ;
+    //graphlistzi := concat(listzi, listcontraintescontraintes ) ;
+    //if(k!=0)
+    //{
+       xgraphmin:=min(listxomegaomega);
+       xgraphmax:=max(listxomegaomega);
+       ygraphmin:=min(listyomegaomega);
+       ygraphmax:=max(listyomegaomega);
+       zgraphmin:=min(listcontraintescontraintes );
+       zgraphmax:=max(listcontraintescontraintes );
+    //}
+label zerocontrainte 
+      //return  f(x,y) + ";" + sommeresidus + ";" + residumoyen +";" + residucarremoyen + ";" + xMoyen + ";" + yMoyen + ";"  + zMoyen + ";" + xMax + ";" + xMin + ";" + yMax
+      //+ ";" + yMin + ";" + zMax + ";" + zMin   + ";" + n +";" + p + ";" + k + ";" +  approx(listxi )  + ";" +  approx(listyi) + ";" +   approx(listzi)
+      //+ ";" +  approx(listxomega)  + ";" +  approx(listyomega) + ";" +  approx(listzomega) + ";" +   approx(listcontraintes) + ";" + listordrederivation + ";"
+      //+ min(graphlistxi)   + ";" + max(graphlistxi) + ";" + min(graphlistyi) + ";" + max(graphlistyi) + ";" +  min(graphlistzi)  + ";" + max(graphlistzi) ;
+
+     return  f(x,y) + ";" + sommeresidus + ";" + residumoyen +";" + residucarremoyen + ";" + xMoyen + ";" + yMoyen + ";"  + zMoyen + ";" + xMax + ";" + xMin + ";" + yMax
+     + ";" + yMin + ";" + zMax + ";" + zMin   + ";" + n +";" + p + ";" + k + ";" +  approx(listxi )  + ";" +  approx(listyi) + ";" +   approx(listzi)
+     + ";" +  approx(listxomega)  + ";" +  approx(listyomega) + ";" +  approx(listzomega) + ";" +   approx(listcontraintes) + ";" + listordrederivation + ";"
+     + xgraphmin  + ";" + xgraphmax + ";" + ygraphmin+ ";" + ygraphmax + ";" +  zgraphmin + ";" + zgraphmax ;
+
+ }:;
+
+nuages3d() ;

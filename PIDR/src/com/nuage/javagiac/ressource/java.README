@@ -1,0 +1,5 @@
+Copy javagiac.dll somewhere in your PATH
+You can run the example with the following command from inside an I/O 
+enabled commandline prompt (e.g. cygwin bash, but not windows prompt)
+  java javagiac.runme
+of course the java command must be in your PATH (search for java.exe)

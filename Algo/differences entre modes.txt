@@ -1,0 +1,43 @@
+Droite des moindres carrés
+- X = tx(x) Y = ty(y), bouton validation des données
+- Calculette
+- Données brutes : 2 colonnes
+- Données traitées : 2 colonnes
+- Contraintes : radio check : Sans contrainte | Droite passe par (Xw;Yw) | Fixer la pente de la droite
+- Inputs de xw/yw brut/traité
+- Graphique
+
+2D
+- Données brutes
+- Contraintes différentielles : n° | xomega | yomega | Valeur contrainte | Ordre Dérivation 
+- Phij(x)
+- Calculette
+- f(x) (x0) Bouton Calcul f(x0)
+- Graphique avec Checkboxes : Nuage de points | Point(s) contraint(s) | f(x) | Polygone de Mi. | Limité      Abscisse/Ordonnée
+
+Plans
+- X = tx(x) Y = ty(y), Z = tz(z) bouton validation des données pour des changements de variable (dispo seulement DMC et Plans)
+- Calculette
+- Données brutes : 3 colonnes
+- Données traitées : 3 colonnes (après cdv)
+- Contraintes : radio check : 1 contrainte | 2 contraintes
+- Graphique avec Checkboxes : Nuage des pointes | Point Moyen | fz(x,y) | fy(x,y) | fx(x,y) | ortho(x,y)
+
+3D
+- Données brutes : 3 colonnes
+- Contraintes différentielles : n° | xomega | yomega | Valeur contrainte (zomega) | Ordre Dérivation | ux | uy  u : vecteur contrainte
+- Phij(x;y) =
+- Calculette
+- f(x,y) (x0,y0) Bouton Calcul f(x0; y0) évaluation fonction 
+- Graphique avec Checkboxes : Nuage de points | Point(s) contraint(s) | f(x,y)  | Limité  (pour couper l'affichage)          Abscisse/Ordonée/Cote (nom pour l'affichage)
+
+Ajouter une notion de tri pour les données brutes et traitées
+Cliquer sur une ligne des données highlight le point sur le graphique (le contraire si possible)
+Ajouter parsing de données pour pouvoir virer un point sur n
+Parsing des données brutes sur les fichiers openoffice aussi (déjà compatible?)
+10^-6 fixer la précision
+phij au lieu de phi
+sigmoide
+
+
+export f(x) résidu moyen (on enleve la somme des résidus) facteur de qualité
